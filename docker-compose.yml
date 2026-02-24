@@ -1,0 +1,6 @@
+services:
+  covenantiq:
+    build: .
+    container_name: covenantiq
+    ports:
+      - "8080:8080"
