@@ -2,6 +2,7 @@ package com.covenantiq.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
+import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -20,6 +21,7 @@ public class GlobalExceptionHandler {
         ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
         pd.setTitle("Resource Not Found");
         pd.setInstance(URI.create(request.getRequestURI()));
+        addMeta(pd);
         return pd;
     }
 
@@ -28,6 +30,7 @@ public class GlobalExceptionHandler {
         ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
         pd.setTitle("Conflict");
         pd.setInstance(URI.create(request.getRequestURI()));
+        addMeta(pd);
         return pd;
     }
 
@@ -36,6 +39,7 @@ public class GlobalExceptionHandler {
         ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage());
         pd.setTitle("Unprocessable Entity");
         pd.setInstance(URI.create(request.getRequestURI()));
+        addMeta(pd);
         return pd;
     }
 
@@ -48,6 +52,7 @@ public class GlobalExceptionHandler {
         Map<String, String> fieldErrors = new HashMap<>();
         ex.getBindingResult().getFieldErrors().forEach(err -> fieldErrors.put(err.getField(), err.getDefaultMessage()));
         pd.setProperty("errors", fieldErrors);
+        addMeta(pd);
         return pd;
     }
 
@@ -56,6 +61,25 @@ public class GlobalExceptionHandler {
         ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage());
         pd.setTitle("Validation Error");
         pd.setInstance(URI.create(request.getRequestURI()));
+        addMeta(pd);
+        return pd;
+    }
+
+    @ExceptionHandler(AuthenticationFailedException.class)
+    public ProblemDetail handleAuth(AuthenticationFailedException ex, HttpServletRequest request) {
+        ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
+        pd.setTitle("Authentication Failed");
+        pd.setInstance(URI.create(request.getRequestURI()));
+        addMeta(pd);
+        return pd;
+    }
+
+    @ExceptionHandler(ForbiddenOperationException.class)
+    public ProblemDetail handleForbidden(ForbiddenOperationException ex, HttpServletRequest request) {
+        ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, ex.getMessage());
+        pd.setTitle("Forbidden");
+        pd.setInstance(URI.create(request.getRequestURI()));
+        addMeta(pd);
         return pd;
     }
 
@@ -64,6 +88,15 @@ public class GlobalExceptionHandler {
         ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR, "Unexpected server error");
         pd.setTitle("Internal Server Error");
         pd.setInstance(URI.create(request.getRequestURI()));
+        addMeta(pd);
         return pd;
+    }
+
+    private void addMeta(ProblemDetail problemDetail) {
+        problemDetail.setProperty("timestamp", java.time.OffsetDateTime.now().toString());
+        String correlationId = MDC.get("correlationId");
+        if (correlationId != null) {
+            problemDetail.setProperty("correlationId", correlationId);
+        }
     }
 }

@@ -18,7 +18,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@TestPropertySource(properties = "app.seed.enabled=false")
+@TestPropertySource(properties = {"app.seed.enabled=false", "app.security.enabled=false"})
 class LoanFlowIntegrationTest {
 
     @Autowired

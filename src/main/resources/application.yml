@@ -18,6 +18,8 @@ spring:
     console:
       enabled: true
       path: /h2-console
+  jackson:
+    default-property-inclusion: non_null
 
 server:
   port: 8080
@@ -25,3 +27,20 @@ server:
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: always
+
+app:
+  security:
+    enabled: true
+  jwt:
+    secret: "change-this-secret-for-prod-change-this-secret"
+    access-token-minutes: 60
+    refresh-token-days: 7

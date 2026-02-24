@@ -1,6 +1,7 @@
 package com.covenantiq.dto.response;
 
 import com.covenantiq.enums.AlertType;
+import com.covenantiq.enums.AlertStatus;
 import com.covenantiq.enums.SeverityLevel;
 
 import java.time.OffsetDateTime;
@@ -13,6 +14,12 @@ public record AlertResponse(
         String message,
         SeverityLevel severityLevel,
         String alertRuleCode,
-        OffsetDateTime triggeredTimestampUtc
+        OffsetDateTime triggeredTimestampUtc,
+        AlertStatus status,
+        String acknowledgedBy,
+        OffsetDateTime acknowledgedAt,
+        String resolvedBy,
+        OffsetDateTime resolvedAt,
+        String resolutionNotes
 ) {
 }

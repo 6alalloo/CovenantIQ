@@ -75,7 +75,13 @@ public final class ResponseMapper {
                 alert.getMessage(),
                 alert.getSeverityLevel(),
                 alert.getAlertRuleCode(),
-                alert.getTriggeredTimestampUtc()
+                alert.getTriggeredTimestampUtc(),
+                alert.getStatus(),
+                alert.getAcknowledgedBy(),
+                alert.getAcknowledgedAt(),
+                alert.getResolvedBy(),
+                alert.getResolvedAt(),
+                alert.getResolutionNotes()
         );
     }
 }

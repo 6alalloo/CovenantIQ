@@ -14,4 +14,8 @@ public interface CovenantResultRepository extends JpaRepository<CovenantResult, 
     Page<CovenantResult> findByFinancialStatementLoanIdAndSupersededFalse(Long loanId, Pageable pageable);
 
     long countByFinancialStatementIdAndStatusAndSupersededFalse(Long financialStatementId, CovenantResultStatus status);
+
+    List<CovenantResult> findByFinancialStatementIdAndSupersededFalseOrderByEvaluationTimestampUtcDescIdDesc(Long financialStatementId);
+
+    List<CovenantResult> findByFinancialStatementLoanIdAndSupersededFalseOrderByEvaluationTimestampUtcDescIdDesc(Long loanId);
 }
