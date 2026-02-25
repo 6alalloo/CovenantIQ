@@ -97,12 +97,12 @@ This document provides a comprehensive implementation plan to complete the Coven
 3. [x] Write unit tests for RiskSummaryService (risk details endpoint) - Completed 2026-02-25
 4. [x] Write unit tests for PortfolioSummaryService (aggregation logic) - Completed 2026-02-25
 5. [x] Write unit tests for ExportService (CSV generation, escaping) - Completed 2026-02-25
-6. Write integration tests for auth flow (login → protected endpoint → refresh)
-7. Write integration tests for alert lifecycle (create → acknowledge → review → resolve)
-8. Write integration tests for RBAC enforcement (403 for forbidden actions)
-9. Validate correlation ID propagation in logs and response headers
-10. Validate health endpoint is unauthenticated and returns component status
-11. Run full test suite and fix any failures
+6. [x] Write integration tests for auth flow (login -> protected endpoint -> refresh) - Completed 2026-02-25
+7. [x] Write integration tests for alert lifecycle (create -> acknowledge -> review -> resolve) - Completed 2026-02-25
+8. [x] Write integration tests for RBAC enforcement (403 for forbidden actions) - Completed 2026-02-25
+9. [x] Validate correlation ID propagation in logs and response headers - Completed 2026-02-25
+10. [x] Validate health endpoint is unauthenticated and returns component status - Completed 2026-02-25
+11. [x] Run full test suite and fix any failures - Completed 2026-02-25
 12. Docker smoke test: build, run, verify all Phase 2A endpoints
 
 **Acceptance Criteria:**
@@ -1053,3 +1053,7 @@ The initial "~70% missing" assessment from the spec was more accurate than the "
 - Contact the engineering team for technical clarification
 - Contact the product owner for scope prioritization
 - Contact the project manager for timeline adjustments
+
+
+
+

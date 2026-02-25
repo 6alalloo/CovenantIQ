@@ -7,7 +7,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
@@ -18,7 +17,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@TestPropertySource(properties = {"app.seed.enabled=false", "app.security.enabled=false"})
 class LoanFlowIntegrationTest {
 
     @Autowired
@@ -29,6 +27,8 @@ class LoanFlowIntegrationTest {
 
     @Test
     void fullLoanFlowWorks() throws Exception {
+        String accessToken = loginAsAnalyst();
+
         String createLoanBody = """
                 {
                   "borrowerName": "Integration Borrower",
@@ -38,6 +38,7 @@ class LoanFlowIntegrationTest {
                 """;
 
         MvcResult loanResult = mockMvc.perform(post("/api/v1/loans")
+                        .header("Authorization", "Bearer " + accessToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(createLoanBody))
                 .andExpect(status().isCreated())
@@ -56,6 +57,7 @@ class LoanFlowIntegrationTest {
                 """;
 
         mockMvc.perform(post("/api/v1/loans/{loanId}/covenants", loanId)
+                        .header("Authorization", "Bearer " + accessToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(covenantBody))
                 .andExpect(status().isCreated());
@@ -75,17 +77,37 @@ class LoanFlowIntegrationTest {
                 """;
 
         mockMvc.perform(post("/api/v1/loans/{loanId}/financial-statements", loanId)
+                        .header("Authorization", "Bearer " + accessToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(statementBody))
                 .andExpect(status().isCreated());
 
-        mockMvc.perform(get("/api/v1/loans/{loanId}/risk-summary", loanId))
+        mockMvc.perform(get("/api/v1/loans/{loanId}/risk-summary", loanId)
+                        .header("Authorization", "Bearer " + accessToken))
                 .andExpect(status().isOk());
 
-        mockMvc.perform(get("/api/v1/loans/{loanId}/alerts", loanId))
+        mockMvc.perform(get("/api/v1/loans/{loanId}/alerts", loanId)
+                        .header("Authorization", "Bearer " + accessToken))
                 .andExpect(status().isOk());
 
-        mockMvc.perform(patch("/api/v1/loans/{loanId}/close", loanId))
+        mockMvc.perform(patch("/api/v1/loans/{loanId}/close", loanId)
+                        .header("Authorization", "Bearer " + accessToken))
                 .andExpect(status().isOk());
+    }
+
+    private String loginAsAnalyst() throws Exception {
+        MvcResult loginResult = mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "username": "analyst@demo.com",
+                                  "password": "Demo123!"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        JsonNode loginJson = objectMapper.readTree(loginResult.getResponse().getContentAsString());
+        return loginJson.get("accessToken").asText();
     }
 }
