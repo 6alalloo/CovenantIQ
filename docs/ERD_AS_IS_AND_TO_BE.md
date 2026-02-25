@@ -1,0 +1,355 @@
+# CovenantIQ ERD Guide (As-Is and To-Be)
+
+## 1) Purpose
+This document gives you two ERD-ready models:
+1. **As-Is model**: exact current implementation from JPA entities in `src/main/java/com/covenantiq/domain`.
+2. **To-Be model**: target-state data model implied by `docs/FinalBRD.md`, `docs/FinalTDD.md`, and `.kiro/specs/covenantiq-phase-2-enhancements/*`.
+
+Use this as your handoff for drawing:
+- current production/repo-accurate ERD
+- target enterprise ERD
+- migration delta between the two
+
+---
+
+## 2) As-Is ERD (Current Codebase)
+
+### 2.1 Tables and Keys
+
+| Table | Primary Key | Foreign Keys | Key Constraints |
+|---|---|---|---|
+| `loans` | `id` | — | — |
+| `covenants` | `id` | `loan_id -> loans.id` | unique (`loan_id`, `type`) |
+| `financial_statements` | `id` | `loan_id -> loans.id` | no DB unique period index; supersession handled in service logic |
+| `covenant_results` | `id` | `covenant_id -> covenants.id`, `financial_statement_id -> financial_statements.id` | — |
+| `alerts` | `id` | `loan_id -> loans.id`, `financial_statement_id -> financial_statements.id` | — |
+| `user_accounts` | `id` | — | `username` unique |
+
+### 2.2 Relationship Cardinality (As-Is)
+1. `loans (1) -> (many) covenants`
+2. `loans (1) -> (many) financial_statements`
+3. `loans (1) -> (many) alerts`
+4. `covenants (1) -> (many) covenant_results`
+5. `financial_statements (1) -> (many) covenant_results`
+6. `financial_statements (1) -> (many) alerts`
+7. `user_accounts` has no physical FK relationship to `alerts` or other entities (actor fields in alert are strings today)
+
+### 2.3 As-Is Mermaid ERD
+```mermaid
+erDiagram
+    LOANS ||--o{ COVENANTS : has
+    LOANS ||--o{ FINANCIAL_STATEMENTS : has
+    LOANS ||--o{ ALERTS : has
+    COVENANTS ||--o{ COVENANT_RESULTS : evaluated_as
+    FINANCIAL_STATEMENTS ||--o{ COVENANT_RESULTS : produces
+    FINANCIAL_STATEMENTS ||--o{ ALERTS : triggers
+
+    LOANS {
+      bigint id PK
+      string borrower_name
+      decimal principal_amount
+      date start_date
+      string status
+    }
+
+    COVENANTS {
+      bigint id PK
+      bigint loan_id FK
+      string type
+      decimal threshold_value
+      string comparison_type
+      string severity_level
+    }
+
+    FINANCIAL_STATEMENTS {
+      bigint id PK
+      bigint loan_id FK
+      string period_type
+      int fiscal_year
+      int fiscal_quarter
+      decimal current_assets
+      decimal current_liabilities
+      decimal total_debt
+      decimal total_equity
+      decimal ebit
+      decimal interest_expense
+      datetime submission_timestamp_utc
+      boolean superseded
+    }
+
+    COVENANT_RESULTS {
+      bigint id PK
+      bigint covenant_id FK
+      bigint financial_statement_id FK
+      decimal actual_value
+      string status
+      datetime evaluation_timestamp_utc
+      boolean superseded
+    }
+
+    ALERTS {
+      bigint id PK
+      bigint loan_id FK
+      bigint financial_statement_id FK
+      string alert_type
+      string message
+      string severity_level
+      datetime triggered_timestamp_utc
+      string alert_rule_code
+      string status
+      string acknowledged_by
+      datetime acknowledged_at
+      string resolved_by
+      datetime resolved_at
+      string resolution_notes
+      boolean superseded
+    }
+
+    USER_ACCOUNTS {
+      bigint id PK
+      string username UK
+      string password_hash
+      string roles_csv
+      boolean active
+      int failed_login_attempts
+      datetime lockout_until_utc
+    }
+```
+
+---
+
+## 3) To-Be ERD (Target from FinalBRD/FinalTDD/.kiro)
+
+### 3.1 Target Tables
+
+#### Existing tables to keep (with changes)
+1. `loans`
+2. `covenants` (extend covenant types)
+3. `financial_statements` (add expanded financial fields)
+4. `covenant_results`
+5. `alerts` (replace string actor fields with FKs to user)
+
+#### Identity and authorization tables (normalized)
+6. `users`
+7. `roles`
+8. `user_roles`
+
+#### Collaboration and governance tables
+9. `comments`
+10. `activity_logs`
+
+#### Document storage table
+11. `attachments`
+
+### 3.2 Target Relationship Cardinality
+1. `loans (1) -> (many) covenants`
+2. `loans (1) -> (many) financial_statements`
+3. `loans (1) -> (many) alerts`
+4. `loans (1) -> (many) comments`
+5. `covenants (1) -> (many) covenant_results`
+6. `financial_statements (1) -> (many) covenant_results`
+7. `financial_statements (1) -> (many) alerts`
+8. `financial_statements (1) -> (many) attachments`
+9. `users (many) <-> (many) roles` via `user_roles`
+10. `users (1) -> (many) comments` (`comments.created_by`)
+11. `users (0..1) -> (many) activity_logs` (`activity_logs.user_id`, nullable for deleted/system actor)
+12. `users (0..1) -> (many) alerts` through lifecycle actor links:
+   - `alerts.acknowledged_by_user_id`
+   - `alerts.resolved_by_user_id`
+13. `users (1) -> (many) attachments` (`attachments.uploaded_by_user_id`)
+
+### 3.3 Target-State Structural Notes
+1. Move from `user_accounts.roles_csv` to normalized `users + roles + user_roles`.
+2. Replace alert lifecycle actor text columns with FK references to `users`.
+3. Keep `superseded` strategy for statement/result/alert historical lineage.
+4. Add collaboration lineage (`comments`, `activity_logs`) linked to `loans` and users.
+5. Add document lineage (`attachments`) linked to `financial_statements` and users.
+
+### 3.4 To-Be Mermaid ERD
+```mermaid
+erDiagram
+    LOANS ||--o{ COVENANTS : has
+    LOANS ||--o{ FINANCIAL_STATEMENTS : has
+    LOANS ||--o{ ALERTS : has
+    LOANS ||--o{ COMMENTS : has
+
+    COVENANTS ||--o{ COVENANT_RESULTS : evaluated_as
+    FINANCIAL_STATEMENTS ||--o{ COVENANT_RESULTS : produces
+    FINANCIAL_STATEMENTS ||--o{ ALERTS : triggers
+    FINANCIAL_STATEMENTS ||--o{ ATTACHMENTS : has
+
+    USERS ||--o{ COMMENTS : creates
+    USERS ||--o{ ACTIVITY_LOGS : performs
+    USERS ||--o{ ATTACHMENTS : uploads
+    USERS ||--o{ ALERTS : acknowledges
+    USERS ||--o{ ALERTS : resolves
+
+    USERS ||--o{ USER_ROLES : assigned
+    ROLES ||--o{ USER_ROLES : grants
+
+    LOANS {
+      bigint id PK
+      string borrower_name
+      decimal principal_amount
+      date start_date
+      string status
+    }
+
+    COVENANTS {
+      bigint id PK
+      bigint loan_id FK
+      string type
+      decimal threshold_value
+      string comparison_type
+      string severity_level
+    }
+
+    FINANCIAL_STATEMENTS {
+      bigint id PK
+      bigint loan_id FK
+      string period_type
+      int fiscal_year
+      int fiscal_quarter
+      decimal current_assets
+      decimal current_liabilities
+      decimal total_debt
+      decimal total_equity
+      decimal ebit
+      decimal interest_expense
+      decimal net_operating_income
+      decimal total_debt_service
+      decimal intangible_assets
+      decimal ebitda
+      decimal fixed_charges
+      decimal inventory
+      decimal total_assets
+      decimal total_liabilities
+      datetime submission_timestamp_utc
+      boolean superseded
+    }
+
+    COVENANT_RESULTS {
+      bigint id PK
+      bigint covenant_id FK
+      bigint financial_statement_id FK
+      decimal actual_value
+      string status
+      datetime evaluation_timestamp_utc
+      boolean superseded
+    }
+
+    ALERTS {
+      bigint id PK
+      bigint loan_id FK
+      bigint financial_statement_id FK
+      string alert_type
+      string message
+      string severity_level
+      datetime triggered_timestamp_utc
+      string alert_rule_code
+      string status
+      bigint acknowledged_by_user_id FK
+      datetime acknowledged_at
+      bigint resolved_by_user_id FK
+      datetime resolved_at
+      string resolution_notes
+      boolean superseded
+    }
+
+    USERS {
+      bigint id PK
+      string username UK
+      string email UK
+      string password_hash
+      boolean active
+      datetime created_at
+    }
+
+    ROLES {
+      bigint id PK
+      string name UK
+      string description
+    }
+
+    USER_ROLES {
+      bigint id PK
+      bigint user_id FK
+      bigint role_id FK
+      datetime assigned_at
+    }
+
+    COMMENTS {
+      bigint id PK
+      bigint loan_id FK
+      bigint created_by_user_id FK
+      string comment_text
+      datetime created_at
+    }
+
+    ACTIVITY_LOGS {
+      bigint id PK
+      string event_type
+      string entity_type
+      bigint entity_id
+      bigint user_id FK
+      string username
+      datetime timestamp
+      string description
+    }
+
+    ATTACHMENTS {
+      bigint id PK
+      bigint financial_statement_id FK
+      string filename
+      bigint file_size
+      string content_type
+      blob file_data
+      bigint uploaded_by_user_id FK
+      datetime uploaded_at
+    }
+```
+
+---
+
+## 4) Delta: What Changes from As-Is to To-Be
+
+### 4.1 New tables
+1. `roles`
+2. `user_roles`
+3. `comments`
+4. `activity_logs`
+5. `attachments`
+6. `users` (if replacing `user_accounts` naming)
+
+### 4.2 Existing table alterations
+1. `financial_statements`: add advanced covenant support fields.
+2. `alerts`: replace `acknowledgedBy`/`resolvedBy` string fields with FK user IDs.
+3. `covenants`: expand enum domain for additional covenant types.
+
+### 4.3 Identity model migration
+1. Current: `user_accounts` + `roles_csv`.
+2. Target: normalized many-to-many `users <-> roles` via `user_roles`.
+
+### 4.4 High-value constraints to enforce in target schema
+1. `covenants`: unique (`loan_id`, `type`).
+2. `user_roles`: unique (`user_id`, `role_id`).
+3. `roles.name` unique.
+4. `users.username` unique.
+5. Optional but recommended: active period uniqueness index for statements (based on supersession strategy and business semantics).
+
+---
+
+## 5) Practical Drawing Guidance
+1. Draw two diagrams: `CovenantIQ As-Is ERD` and `CovenantIQ To-Be ERD`.
+2. For migration planning, annotate changed columns in `alerts` and `financial_statements`.
+3. Keep enum domains in a legend block (statuses/types/severity/roles).
+4. Show `superseded` as a lifecycle/versioning mechanism, not deletion.
+
+---
+
+## 6) Source Traceability
+- `docs/FinalBRD.md`
+- `docs/FinalTDD.md`
+- `.kiro/specs/covenantiq-phase-2-enhancements/requirements.md`
+- `.kiro/specs/covenantiq-phase-2-enhancements/design.md`
+- `src/main/java/com/covenantiq/domain/*`
