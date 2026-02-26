@@ -1,42 +1,59 @@
 import { FormEvent, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
-
-const DEMO_USERS = ["Analyst.A", "Analyst.B", "Risk.Lead"];
+import { ApiError } from "../api/client";
+import { BrandLogo } from "../components/BrandLogo";
 
 export function LoginPage() {
-  const [selectedUser, setSelectedUser] = useState(DEMO_USERS[0]);
+  const [username, setUsername] = useState("analyst@demo.com");
+  const [password, setPassword] = useState("Demo123!");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  function onSubmit(event: FormEvent) {
+  async function onSubmit(event: FormEvent) {
     event.preventDefault();
-    login(selectedUser);
-    navigate("/app");
+    setError(null);
+    setIsLoading(true);
+    try {
+      await login(username, password);
+      navigate("/app/dashboard");
+    } catch (e) {
+      const apiError = e as ApiError;
+      const suffix = apiError.correlationId ? ` (Correlation: ${apiError.correlationId})` : "";
+      setError(`${apiError.message}${suffix}`);
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (
-    <div className="min-h-screen bg-surface flex items-center justify-center p-6">
-      <form onSubmit={onSubmit} className="w-full max-w-md rounded-2xl bg-white shadow-panel p-8">
-        <h1 className="text-3xl font-semibold text-ink">CovenantIQ</h1>
-        <p className="text-slate-600 mt-2">Mock analyst login for demo mode</p>
-        <label className="block mt-6 text-sm font-medium text-slate-700">Select Demo User</label>
-        <select
-          value={selectedUser}
-          onChange={(e) => setSelectedUser(e.target.value)}
-          className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2"
-        >
-          {DEMO_USERS.map((user) => (
-            <option key={user} value={user}>
-              {user}
-            </option>
-          ))}
-        </select>
-        <button
-          type="submit"
-          className="mt-6 w-full rounded-lg bg-primary px-4 py-2 font-semibold text-white hover:opacity-95"
-        >
-          Enter Dashboard
+    <div className="grid min-h-screen place-items-center p-6">
+      <form onSubmit={onSubmit} className="card w-full max-w-sm p-7">
+        <div className="mb-5">
+          <BrandLogo size="sm" />
+          <p className="mt-2 text-[10px] uppercase tracking-[0.16em] text-[var(--text-secondary)]">Secure Access</p>
+        </div>
+        <p className="text-xs text-[var(--text-secondary)]">
+          Use seeded credentials. Analyst: `analyst@demo.com` / `Demo123!`
+        </p>
+
+        <label className="mt-5 block text-xs uppercase tracking-[0.08em] text-[var(--text-secondary)]">Username</label>
+        <input className="input mt-2" value={username} onChange={(e) => setUsername(e.target.value)} />
+
+        <label className="mt-3 block text-xs uppercase tracking-[0.08em] text-[var(--text-secondary)]">Password</label>
+        <input
+          type="password"
+          className="input mt-2"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+
+        {error ? <p className="mt-4 text-sm text-[var(--risk-high)]">{error}</p> : null}
+
+        <button type="submit" className="btn-primary mt-5 w-full" disabled={isLoading}>
+          {isLoading ? "Signing in..." : "Sign In"}
         </button>
       </form>
     </div>
