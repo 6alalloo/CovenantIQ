@@ -17,6 +17,14 @@ public record FinancialStatementResponse(
         BigDecimal totalEquity,
         BigDecimal ebit,
         BigDecimal interestExpense,
+        BigDecimal netOperatingIncome,
+        BigDecimal totalDebtService,
+        BigDecimal intangibleAssets,
+        BigDecimal ebitda,
+        BigDecimal fixedCharges,
+        BigDecimal inventory,
+        BigDecimal totalAssets,
+        BigDecimal totalLiabilities,
         OffsetDateTime submissionTimestampUtc
 ) {
 }

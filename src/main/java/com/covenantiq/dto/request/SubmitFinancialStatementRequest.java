@@ -17,8 +17,16 @@ public record SubmitFinancialStatementRequest(
         @NotNull @DecimalMin("0.00") BigDecimal currentLiabilities,
         @NotNull @DecimalMin("0.00") BigDecimal totalDebt,
         @NotNull @DecimalMin("0.00") BigDecimal totalEquity,
-        @NotNull BigDecimal ebit,
-        @NotNull BigDecimal interestExpense,
+        @NotNull @DecimalMin("0.00") BigDecimal ebit,
+        @NotNull @DecimalMin("0.00") BigDecimal interestExpense,
+        @DecimalMin("0.00") BigDecimal netOperatingIncome,
+        @DecimalMin("0.00") BigDecimal totalDebtService,
+        @DecimalMin("0.00") BigDecimal intangibleAssets,
+        @DecimalMin("0.00") BigDecimal ebitda,
+        @DecimalMin("0.00") BigDecimal fixedCharges,
+        @DecimalMin("0.00") BigDecimal inventory,
+        @DecimalMin("0.00") BigDecimal totalAssets,
+        @DecimalMin("0.00") BigDecimal totalLiabilities,
         OffsetDateTime submissionTimestamp
 ) {
 }

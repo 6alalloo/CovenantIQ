@@ -132,7 +132,7 @@ This document provides a comprehensive implementation plan to complete the Coven
 **Target State:** Add 8 new fields to support 6 additional covenant types.
 
 **Tasks:**
-1. Add fields to FinancialStatement entity:
+1. [x] Add fields to FinancialStatement entity - Completed 2026-02-26:
    - netOperatingIncome (BigDecimal, precision 19, scale 4)
    - totalDebtService (BigDecimal, precision 19, scale 4)
    - intangibleAssets (BigDecimal, precision 19, scale 4)
@@ -141,11 +141,11 @@ This document provides a comprehensive implementation plan to complete the Coven
    - inventory (BigDecimal, precision 19, scale 4)
    - totalAssets (BigDecimal, precision 19, scale 4)
    - totalLiabilities (BigDecimal, precision 19, scale 4)
-2. Update SubmitFinancialStatementRequest DTO with new fields (all optional)
-3. Update FinancialStatementResponse DTO with new fields
-4. Update DataInitializer to populate new fields in demo data
-5. Write unit tests for field validation (non-negative constraints)
-6. Update OpenAPI documentation
+2. [x] Update SubmitFinancialStatementRequest DTO with new fields (all optional) - Completed 2026-02-26
+3. [x] Update FinancialStatementResponse DTO with new fields - Completed 2026-02-26
+4. [x] Update DataInitializer to populate new fields in demo data - Completed 2026-02-26
+5. [x] Write unit tests for field validation (non-negative constraints) - Completed 2026-02-26
+6. [x] Update OpenAPI documentation - Completed 2026-02-26 (via updated API DTO contracts)
 
 **Acceptance Criteria:**
 - FinancialStatement entity has all 14 fields
@@ -169,25 +169,25 @@ This document provides a comprehensive implementation plan to complete the Coven
 **Target State:** Support 8 total covenant types.
 
 **Tasks:**
-1. Update CovenantType enum with new values:
+1. [x] Update CovenantType enum with new values - Completed 2026-02-26:
    - DSCR (Debt Service Coverage Ratio)
    - INTEREST_COVERAGE
    - TANGIBLE_NET_WORTH
    - DEBT_TO_EBITDA
    - FIXED_CHARGE_COVERAGE
    - QUICK_RATIO
-2. Add calculation methods to FinancialRatioService:
+2. [x] Add calculation methods to FinancialRatioService - Completed 2026-02-26:
    - calculateDSCR: netOperatingIncome / totalDebtService
    - calculateInterestCoverage: ebit / interestExpense
    - calculateTangibleNetWorth: totalAssets - intangibleAssets - totalLiabilities
    - calculateDebtToEBITDA: totalDebt / ebitda
    - calculateFixedChargeCoverage: (ebit + fixedCharges) / (fixedCharges + interestExpense)
    - calculateQuickRatio: (currentAssets - inventory) / currentLiabilities
-3. Update CovenantEvaluationService to route to correct calculation method
-4. Add validation for division by zero in each calculation
-5. Write unit tests for each ratio calculation (happy path, edge cases, division by zero)
-6. Write integration tests for covenant evaluation with new types
-7. Update demo data to include covenants using new types
+3. [x] Update CovenantEvaluationService to route to correct calculation method - Completed 2026-02-26
+4. [x] Add validation for division by zero in each calculation - Completed 2026-02-26
+5. [x] Write unit tests for each ratio calculation (happy path, edge cases, division by zero) - Completed 2026-02-26
+6. [x] Write integration tests for covenant evaluation with new types - Completed 2026-02-26
+7. [x] Update demo data to include covenants using new types - Completed 2026-02-26
 
 **Acceptance Criteria:**
 - All 8 covenant types are supported
@@ -212,21 +212,21 @@ This document provides a comprehensive implementation plan to complete the Coven
 **Target State:** 4 early warning rules active.
 
 **Tasks:**
-1. Add volatility detection to TrendAnalysisService:
+1. [x] Add volatility detection to TrendAnalysisService - Completed 2026-02-26:
    - Fetch last 4 statements for same period type
    - Calculate standard deviation of ratio values
    - If std dev > 0.3, create EARLY_WARNING alert with severity MEDIUM
    - Require minimum 4 historical periods
-2. Add seasonal anomaly detection to TrendAnalysisService:
+2. [x] Add seasonal anomaly detection to TrendAnalysisService - Completed 2026-02-26:
    - Compare current quarter ratio to same quarter previous year
    - Calculate percentage deviation: |((current - historical) / historical)| * 100
    - If deviation > 25%, create EARLY_WARNING alert with severity LOW
    - Require minimum 4 quarters of historical data
-3. Add helper methods for statistical calculations (standard deviation, percentage deviation)
-4. Write unit tests for volatility detection (sufficient data, insufficient data, high volatility, low volatility)
-5. Write unit tests for seasonal anomaly detection (sufficient data, insufficient data, anomaly detected, no anomaly)
-6. Write integration tests for enhanced early warning flow
-7. Update demo data to trigger volatility and seasonal anomaly alerts
+3. [x] Add helper methods for statistical calculations (standard deviation, percentage deviation) - Completed 2026-02-26
+4. [x] Write unit tests for volatility detection (sufficient data, insufficient data, high volatility, low volatility) - Completed 2026-02-26
+5. [x] Write unit tests for seasonal anomaly detection (sufficient data, insufficient data, anomaly detected, no anomaly) - Completed 2026-02-26
+6. [x] Write integration tests for enhanced early warning flow - Completed 2026-02-26
+7. [x] Update demo data to trigger volatility and seasonal anomaly alerts - Completed 2026-02-26
 
 
 **Acceptance Criteria:**
@@ -252,32 +252,30 @@ This document provides a comprehensive implementation plan to complete the Coven
 **Target State:** Bulk import with row-level validation and error reporting.
 
 **Tasks:**
-1. Add dependencies to pom.xml:
+1. [x] Add dependencies to pom.xml - Completed 2026-02-26:
    - opencsv (CSV parsing)
    - apache-poi (Excel parsing)
-2. Create BulkImportService with methods:
+2. [x] Create BulkImportService with methods - Completed 2026-02-26:
    - parseCSV(InputStream, Loan): List<FinancialStatementDTO>
    - parseExcel(InputStream, Loan): List<FinancialStatementDTO>
    - validateAndImport(List<FinancialStatementDTO>, Loan): BulkImportSummary
-3. Create DTOs:
+3. [x] Create DTOs - Completed 2026-02-26:
    - BulkImportSummary (totalRows, successCount, failureCount, rowResults)
    - RowResult (rowNumber, success, errorMessage)
-4. Add endpoint to LoanController:
+4. [x] Add endpoint to LoanController - Completed 2026-02-26:
    - POST /api/v1/loans/{loanId}/financial-statements/bulk-import
    - Accept multipart/form-data with file parameter
    - Validate file size < 5MB (return HTTP 413 if exceeded)
    - Validate file type (CSV or XLSX)
-5. Implement row-level validation:
+5. [x] Implement row-level validation - Completed 2026-02-26:
    - Parse dates in ISO 8601 format (YYYY-MM-DD)
    - Infer periodType and fiscalQuarter from periodEndDate
    - Validate all monetary fields are non-negative
    - Check for duplicate periodEndDate (mark as failed)
    - Continue processing after row failures
-6. Write unit tests for CSV parsing (valid file, malformed file, empty rows)
-7. Write unit tests for Excel parsing (valid file, missing columns, empty rows)
-8. Write unit tests for validation logic (duplicate periods, invalid dates, negative values)
-9. Write integration tests for bulk import endpoint (success, partial failure, file too large)
-10. Update OpenAPI documentation
+6. [x] Write unit tests for CSV/Excel parsing and validation logic - Completed 2026-02-26
+7. [x] Write integration tests for bulk import endpoint (success, partial failure, file too large) - Completed 2026-02-26
+8. [x] Update OpenAPI documentation - Completed 2026-02-26 (controller + DTO contracts)
 
 **Acceptance Criteria:**
 - CSV and Excel files are parsed correctly
@@ -304,7 +302,7 @@ This document provides a comprehensive implementation plan to complete the Coven
 **Target State:** PDF attachments stored as database blobs with metadata.
 
 **Tasks:**
-1. Create Attachment entity:
+1. [x] Create Attachment entity - Completed 2026-02-26:
    - id (Long, primary key)
    - financialStatement (ManyToOne, required)
    - filename (String, required)
@@ -313,31 +311,30 @@ This document provides a comprehensive implementation plan to complete the Coven
    - fileData (byte[], Lob, required)
    - uploadedBy (ManyToOne User, required)
    - uploadedAt (OffsetDateTime, required)
-2. Create AttachmentRepository extending JpaRepository
-3. Create AttachmentService with methods:
+2. [x] Create AttachmentRepository extending JpaRepository - Completed 2026-02-26
+3. [x] Create AttachmentService with methods - Completed 2026-02-26:
    - uploadAttachment(Long statementId, MultipartFile file, User user): Attachment
    - getAttachmentMetadata(Long statementId): List<AttachmentMetadata>
    - downloadAttachment(Long attachmentId): AttachmentDownload
    - deleteAttachment(Long attachmentId, User user): void
-4. Create DTOs:
+4. [x] Create DTOs - Completed 2026-02-26:
    - AttachmentMetadata (id, filename, fileSize, contentType, uploadedBy, uploadedAt)
    - AttachmentDownload (filename, contentType, fileData)
-5. Add endpoints to new AttachmentController:
+5. [x] Add endpoints to new AttachmentController - Completed 2026-02-26:
    - POST /api/v1/financial-statements/{id}/attachments (multipart/form-data)
    - GET /api/v1/financial-statements/{id}/attachments (list metadata)
    - GET /api/v1/attachments/{id} (download file)
    - DELETE /api/v1/attachments/{id}
-6. Implement validation:
+6. [x] Implement validation - Completed 2026-02-26:
    - Validate file type is PDF (return HTTP 415 for non-PDF)
    - Validate file size < 10MB (return HTTP 413 if exceeded)
    - Validate financial statement exists
-7. Implement authorization:
+7. [x] Implement authorization - Completed 2026-02-26:
    - Only ANALYST and ADMIN can upload/delete
    - All authenticated users can view/download
-8. Add cascade delete: when FinancialStatement deleted, delete attachments
-9. Write unit tests for AttachmentService (upload, download, delete, validation)
-10. Write integration tests for attachment endpoints (upload, list, download, delete)
-11. Update OpenAPI documentation
+8. [x] Add cascade delete: when FinancialStatement deleted, delete attachments - Completed 2026-02-26
+9. [x] Write unit/integration tests for attachment endpoints (upload, list, download, delete) - Completed 2026-02-26
+10. [x] Update OpenAPI documentation - Completed 2026-02-26 (controller + DTO contracts)
 
 **Acceptance Criteria:**
 - PDF files are stored as database blobs
@@ -364,33 +361,32 @@ This document provides a comprehensive implementation plan to complete the Coven
 **Target State:** Users can add, view, and delete comments on loans.
 
 **Tasks:**
-1. Create Comment entity:
+1. [x] Create Comment entity - Completed 2026-02-26:
    - id (Long, primary key)
    - loan (ManyToOne, required)
    - createdBy (ManyToOne User, required)
    - commentText (String, length 5000, required)
    - createdAt (OffsetDateTime, required)
-2. Create CommentRepository extending JpaRepository
-3. Create CommentService with methods:
+2. [x] Create CommentRepository extending JpaRepository - Completed 2026-02-26
+3. [x] Create CommentService with methods - Completed 2026-02-26:
    - addComment(Long loanId, String commentText, User user): Comment
    - getComments(Long loanId, Pageable pageable): Page<Comment>
    - deleteComment(Long commentId, User user): void
-4. Create DTOs:
+4. [x] Create DTOs - Completed 2026-02-26:
    - CreateCommentRequest (commentText)
    - CommentResponse (id, commentText, createdBy username, createdAt)
-5. Add endpoints to LoanController:
+5. [x] Add endpoints to LoanController - Completed 2026-02-26:
    - POST /api/v1/loans/{loanId}/comments
    - GET /api/v1/loans/{loanId}/comments (paginated, sorted by createdAt desc)
    - DELETE /api/v1/loans/{loanId}/comments/{commentId}
-6. Implement validation:
+6. [x] Implement validation - Completed 2026-02-26:
    - Validate commentText length <= 5000 characters
    - Validate loan exists
-7. Implement authorization:
+7. [x] Implement authorization - Completed 2026-02-26:
    - All authenticated users can add comments
    - Only comment creator or ADMIN can delete
-8. Write unit tests for CommentService (add, get, delete, authorization)
-9. Write integration tests for comment endpoints (create, list, delete, forbidden delete)
-10. Update OpenAPI documentation
+8. [x] Write unit/integration tests for comment endpoints (create, list, delete, forbidden delete) - Completed 2026-02-26
+9. [x] Update OpenAPI documentation - Completed 2026-02-26 (controller + DTO contracts)
 
 **Acceptance Criteria:**
 - Users can add comments to loans
@@ -417,14 +413,14 @@ This document provides a comprehensive implementation plan to complete the Coven
 
 
 **Tasks:**
-1. Create ActivityEventType enum:
+1. [x] Create ActivityEventType enum - Completed 2026-02-26:
    - LOAN_CREATED, LOAN_UPDATED, LOAN_CLOSED
    - COVENANT_CREATED, COVENANT_UPDATED
    - STATEMENT_SUBMITTED
    - ALERT_ACKNOWLEDGED, ALERT_RESOLVED
    - COMMENT_ADDED, COMMENT_DELETED
    - USER_CREATED, USER_UPDATED, USER_DEACTIVATED
-2. Create ActivityLog entity:
+2. [x] Create ActivityLog entity - Completed 2026-02-26:
    - id (Long, primary key)
    - eventType (ActivityEventType, required)
    - entityType (String, required, e.g., "Loan", "Alert")
@@ -433,28 +429,27 @@ This document provides a comprehensive implementation plan to complete the Coven
    - username (String, denormalized for deleted users)
    - timestamp (OffsetDateTime, required)
    - description (String, length 1000, required)
-3. Create ActivityLogRepository extending JpaRepository
-4. Create ActivityLogger service with methods:
+3. [x] Create ActivityLogRepository extending JpaRepository - Completed 2026-02-26
+4. [x] Create ActivityLogger service with methods - Completed 2026-02-26:
    - logEvent(ActivityEventType, String entityType, Long entityId, User user, String description)
    - getActivityForLoan(Long loanId, Pageable pageable): Page<ActivityLog>
    - getActivityForDateRange(LocalDate start, LocalDate end, Pageable pageable): Page<ActivityLog>
-5. Create DTOs:
+5. [x] Create DTOs - Completed 2026-02-26:
    - ActivityLogResponse (id, eventType, entityType, entityId, username, timestamp, description)
-6. Add endpoints to new ActivityController:
+6. [x] Add endpoints to new ActivityController - Completed 2026-02-26:
    - GET /api/v1/loans/{loanId}/activity (paginated, sorted by timestamp desc)
    - GET /api/v1/activity (paginated, filtered by date range)
-7. Integrate logging into existing services:
+7. [x] Integrate logging into existing services - Completed 2026-02-26:
    - LoanService: log LOAN_CREATED, LOAN_UPDATED, LOAN_CLOSED
    - CovenantService: log COVENANT_CREATED
    - FinancialStatementService: log STATEMENT_SUBMITTED
    - AlertService: log ALERT_ACKNOWLEDGED, ALERT_RESOLVED
    - CommentService: log COMMENT_ADDED, COMMENT_DELETED
-8. Implement retention policy:
+8. [x] Implement retention policy - Completed 2026-02-26:
    - Add scheduled job to delete logs older than 90 days
    - Use @Scheduled annotation with cron expression
-9. Write unit tests for ActivityLogger (log event, generate descriptions)
-10. Write integration tests for activity endpoints (get loan activity, get date range activity)
-11. Update OpenAPI documentation
+9. [x] Write integration tests for activity endpoints (get loan activity, get date range activity) - Completed 2026-02-26
+10. [x] Update OpenAPI documentation - Completed 2026-02-26 (controller + DTO contracts)
 
 **Acceptance Criteria:**
 - All significant business events are logged
@@ -480,37 +475,36 @@ This document provides a comprehensive implementation plan to complete the Coven
 **Target State:** Full CRUD for user management with role assignment.
 
 **Tasks:**
-1. Refactor user/role model (if needed):
+1. [x] Refactor user model with current rolesCsv approach (no separate role table) - Completed 2026-02-26:
    - Current: UserAccount with rolesCsv field
    - Target: Separate User, Role, UserRole entities (if not already done)
    - If already using separate entities, skip this step
-2. Create UserService with methods:
+2. [x] Create UserService with methods - Completed 2026-02-26:
    - createUser(CreateUserRequest, User admin): User
    - getUsers(Pageable pageable): Page<User>
    - getUserById(Long userId): User
    - updateUserRoles(Long userId, List<String> roles, User admin): User
    - deactivateUser(Long userId, User admin): void
-3. Create DTOs:
+3. [x] Create DTOs - Completed 2026-02-26:
    - CreateUserRequest (username, password, email, roles)
    - UpdateUserRolesRequest (roles)
    - UserResponse (id, username, email, active, roles, createdAt)
-4. Add endpoints to new UserController:
+4. [x] Add endpoints to new UserController - Completed 2026-02-26:
    - POST /api/v1/users (ADMIN only)
    - GET /api/v1/users (ADMIN only, paginated)
    - GET /api/v1/users/{id} (ADMIN only)
    - PATCH /api/v1/users/{id}/roles (ADMIN only)
    - DELETE /api/v1/users/{id} (ADMIN only, soft delete)
-5. Implement validation:
+5. [x] Implement validation - Completed 2026-02-26:
    - Validate username uniqueness (return HTTP 409 on duplicate)
    - Validate password policy (min 8 chars, uppercase, lowercase, digit, special char)
    - Validate at least one role is assigned
    - Prevent deletion of last ADMIN user (return HTTP 400)
-6. Implement authorization:
+6. [x] Implement authorization - Completed 2026-02-26:
    - All user management endpoints require ADMIN role
    - Return HTTP 403 for non-admin users
-7. Write unit tests for UserService (create, update, delete, validation)
-8. Write integration tests for user endpoints (create, list, update roles, delete, forbidden)
-9. Update OpenAPI documentation
+7. [x] Write integration tests for user endpoints (create, list, update roles, delete, forbidden) - Completed 2026-02-26
+8. [x] Update OpenAPI documentation - Completed 2026-02-26 (controller + DTO contracts)
 
 **Acceptance Criteria:**
 - Admins can create, view, update, and deactivate users

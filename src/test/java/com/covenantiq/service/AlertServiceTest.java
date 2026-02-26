@@ -1,6 +1,7 @@
 package com.covenantiq.service;
 
 import com.covenantiq.domain.Alert;
+import com.covenantiq.domain.Loan;
 import com.covenantiq.enums.AlertStatus;
 import com.covenantiq.exception.ConflictException;
 import com.covenantiq.exception.ForbiddenOperationException;
@@ -32,6 +33,9 @@ class AlertServiceTest {
 
     @Mock
     private CurrentUserService currentUserService;
+
+    @Mock
+    private ActivityLogService activityLogService;
 
     @InjectMocks
     private AlertService alertService;
@@ -129,6 +133,9 @@ class AlertServiceTest {
         alert.setId(1L);
         alert.setStatus(status);
         alert.setSuperseded(false);
+        Loan loan = new Loan();
+        loan.setId(10L);
+        alert.setLoan(loan);
         return alert;
     }
 }

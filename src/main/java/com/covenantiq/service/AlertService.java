@@ -3,6 +3,7 @@ package com.covenantiq.service;
 import com.covenantiq.domain.Alert;
 import com.covenantiq.domain.FinancialStatement;
 import com.covenantiq.domain.Loan;
+import com.covenantiq.enums.ActivityEventType;
 import com.covenantiq.enums.AlertStatus;
 import com.covenantiq.enums.AlertType;
 import com.covenantiq.enums.SeverityLevel;
@@ -27,10 +28,16 @@ public class AlertService {
 
     private final AlertRepository alertRepository;
     private final CurrentUserService currentUserService;
+    private final ActivityLogService activityLogService;
 
-    public AlertService(AlertRepository alertRepository, CurrentUserService currentUserService) {
+    public AlertService(
+            AlertRepository alertRepository,
+            CurrentUserService currentUserService,
+            ActivityLogService activityLogService
+    ) {
         this.alertRepository = alertRepository;
         this.currentUserService = currentUserService;
+        this.activityLogService = activityLogService;
     }
 
     @Transactional
@@ -87,6 +94,23 @@ public class AlertService {
         Alert saved = alertRepository.save(alert);
         log.info("Alert status updated: alertId={}, from={}, to={}, by={}",
                 alertId, previousStatus, targetStatus, username);
+        if (targetStatus == AlertStatus.ACKNOWLEDGED) {
+            activityLogService.logEvent(
+                    ActivityEventType.ALERT_ACKNOWLEDGED,
+                    "Alert",
+                    alertId,
+                    alert.getLoan().getId(),
+                    "Alert acknowledged"
+            );
+        } else if (targetStatus == AlertStatus.RESOLVED) {
+            activityLogService.logEvent(
+                    ActivityEventType.ALERT_RESOLVED,
+                    "Alert",
+                    alertId,
+                    alert.getLoan().getId(),
+                    "Alert resolved"
+            );
+        }
         return saved;
     }
 

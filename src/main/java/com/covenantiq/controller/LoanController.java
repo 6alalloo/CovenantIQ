@@ -1,9 +1,12 @@
 package com.covenantiq.controller;
 
 import com.covenantiq.dto.request.CreateCovenantRequest;
+import com.covenantiq.dto.request.CreateCommentRequest;
 import com.covenantiq.dto.request.CreateLoanRequest;
 import com.covenantiq.dto.request.SubmitFinancialStatementRequest;
 import com.covenantiq.dto.response.AlertResponse;
+import com.covenantiq.dto.response.BulkImportSummaryResponse;
+import com.covenantiq.dto.response.CommentResponse;
 import com.covenantiq.dto.response.CovenantResponse;
 import com.covenantiq.dto.response.CovenantResultResponse;
 import com.covenantiq.dto.response.FinancialStatementResponse;
@@ -11,7 +14,9 @@ import com.covenantiq.dto.response.LoanResponse;
 import com.covenantiq.dto.response.RiskDetailsResponse;
 import com.covenantiq.dto.response.RiskSummaryResponse;
 import com.covenantiq.mapper.ResponseMapper;
+import com.covenantiq.service.BulkImportService;
 import com.covenantiq.service.CovenantService;
+import com.covenantiq.service.CommentService;
 import com.covenantiq.service.ExportService;
 import com.covenantiq.service.FinancialStatementService;
 import com.covenantiq.service.LoanService;
@@ -32,6 +37,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/v1/loans")
@@ -43,6 +51,8 @@ public class LoanController {
     private final MonitoringQueryService monitoringQueryService;
     private final RiskSummaryService riskSummaryService;
     private final ExportService exportService;
+    private final BulkImportService bulkImportService;
+    private final CommentService commentService;
 
     public LoanController(
             LoanService loanService,
@@ -50,7 +60,9 @@ public class LoanController {
             FinancialStatementService financialStatementService,
             MonitoringQueryService monitoringQueryService,
             RiskSummaryService riskSummaryService,
-            ExportService exportService
+            ExportService exportService,
+            BulkImportService bulkImportService,
+            CommentService commentService
     ) {
         this.loanService = loanService;
         this.covenantService = covenantService;
@@ -58,6 +70,8 @@ public class LoanController {
         this.monitoringQueryService = monitoringQueryService;
         this.riskSummaryService = riskSummaryService;
         this.exportService = exportService;
+        this.bulkImportService = bulkImportService;
+        this.commentService = commentService;
     }
 
     @PostMapping
@@ -100,6 +114,34 @@ public class LoanController {
             @Valid @RequestBody SubmitFinancialStatementRequest request
     ) {
         return ResponseMapper.toFinancialStatementResponse(financialStatementService.submitStatement(loanId, request));
+    }
+
+    @PostMapping(value = "/{loanId}/financial-statements/bulk-import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAnyRole('ANALYST','ADMIN')")
+    public BulkImportSummaryResponse bulkImportStatements(
+            @PathVariable Long loanId,
+            @RequestPart("file") MultipartFile file
+    ) {
+        return bulkImportService.importStatements(loanId, file);
+    }
+
+    @PostMapping("/{loanId}/comments")
+    @PreAuthorize("hasAnyRole('ANALYST','RISK_LEAD','ADMIN')")
+    public CommentResponse addComment(@PathVariable Long loanId, @Valid @RequestBody CreateCommentRequest request) {
+        return commentService.addComment(loanId, request.commentText());
+    }
+
+    @GetMapping("/{loanId}/comments")
+    @PreAuthorize("hasAnyRole('ANALYST','RISK_LEAD','ADMIN')")
+    public Page<CommentResponse> getComments(@PathVariable Long loanId, Pageable pageable) {
+        return commentService.getComments(loanId, pageable);
+    }
+
+    @DeleteMapping("/{loanId}/comments/{commentId}")
+    @PreAuthorize("hasAnyRole('ANALYST','RISK_LEAD','ADMIN')")
+    public ResponseEntity<Void> deleteComment(@PathVariable Long loanId, @PathVariable Long commentId) {
+        commentService.deleteComment(loanId, commentId);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/{loanId}/covenant-results")

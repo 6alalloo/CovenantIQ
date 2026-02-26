@@ -2,6 +2,7 @@ package com.covenantiq.service;
 
 import com.covenantiq.domain.Loan;
 import com.covenantiq.dto.request.CreateLoanRequest;
+import com.covenantiq.enums.ActivityEventType;
 import com.covenantiq.enums.LoanStatus;
 import com.covenantiq.exception.ConflictException;
 import com.covenantiq.exception.ResourceNotFoundException;
@@ -15,9 +16,11 @@ import org.springframework.transaction.annotation.Transactional;
 public class LoanService {
 
     private final LoanRepository loanRepository;
+    private final ActivityLogService activityLogService;
 
-    public LoanService(LoanRepository loanRepository) {
+    public LoanService(LoanRepository loanRepository, ActivityLogService activityLogService) {
         this.loanRepository = loanRepository;
+        this.activityLogService = activityLogService;
     }
 
     @Transactional
@@ -27,7 +30,15 @@ public class LoanService {
         loan.setPrincipalAmount(request.principalAmount());
         loan.setStartDate(request.startDate());
         loan.setStatus(LoanStatus.ACTIVE);
-        return loanRepository.save(loan);
+        Loan saved = loanRepository.save(loan);
+        activityLogService.logEvent(
+                ActivityEventType.LOAN_CREATED,
+                "Loan",
+                saved.getId(),
+                saved.getId(),
+                "Loan created for borrower " + saved.getBorrowerName()
+        );
+        return saved;
     }
 
     @Transactional(readOnly = true)
@@ -48,7 +59,15 @@ public class LoanService {
             throw new ConflictException("Loan " + loanId + " is already CLOSED");
         }
         loan.setStatus(LoanStatus.CLOSED);
-        return loanRepository.save(loan);
+        Loan saved = loanRepository.save(loan);
+        activityLogService.logEvent(
+                ActivityEventType.LOAN_CLOSED,
+                "Loan",
+                saved.getId(),
+                saved.getId(),
+                "Loan closed"
+        );
+        return saved;
     }
 
     public void ensureActive(Loan loan) {

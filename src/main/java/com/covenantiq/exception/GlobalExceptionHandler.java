@@ -106,6 +106,24 @@ public class GlobalExceptionHandler {
         return pd;
     }
 
+    @ExceptionHandler(PayloadTooLargeException.class)
+    public ProblemDetail handlePayloadTooLarge(PayloadTooLargeException ex, HttpServletRequest request) {
+        ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.PAYLOAD_TOO_LARGE, ex.getMessage());
+        pd.setTitle("Payload Too Large");
+        pd.setInstance(URI.create(request.getRequestURI()));
+        addMeta(pd);
+        return pd;
+    }
+
+    @ExceptionHandler(UnsupportedFileTypeException.class)
+    public ProblemDetail handleUnsupportedType(UnsupportedFileTypeException ex, HttpServletRequest request) {
+        ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.UNSUPPORTED_MEDIA_TYPE, ex.getMessage());
+        pd.setTitle("Unsupported Media Type");
+        pd.setInstance(URI.create(request.getRequestURI()));
+        addMeta(pd);
+        return pd;
+    }
+
     private void addMeta(ProblemDetail problemDetail) {
         problemDetail.setProperty("timestamp", java.time.OffsetDateTime.now().toString());
         String correlationId = MDC.get("correlationId");

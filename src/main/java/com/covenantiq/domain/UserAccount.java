@@ -20,6 +20,9 @@ public class UserAccount {
     @Column(nullable = false, unique = true)
     private String username;
 
+    @Column(unique = true)
+    private String email;
+
     @Column(nullable = false)
     private String passwordHash;
 
@@ -34,6 +37,9 @@ public class UserAccount {
 
     @Column
     private OffsetDateTime lockoutUntilUtc;
+
+    @Column(nullable = false)
+    private OffsetDateTime createdAt = OffsetDateTime.now();
 
     public Long getId() {
         return id;
@@ -89,5 +95,21 @@ public class UserAccount {
 
     public void setLockoutUntilUtc(OffsetDateTime lockoutUntilUtc) {
         this.lockoutUntilUtc = lockoutUntilUtc;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public OffsetDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(OffsetDateTime createdAt) {
+        this.createdAt = createdAt;
     }
 }

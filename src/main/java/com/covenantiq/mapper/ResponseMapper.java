@@ -50,6 +50,14 @@ public final class ResponseMapper {
                 statement.getTotalEquity(),
                 statement.getEbit(),
                 statement.getInterestExpense(),
+                statement.getNetOperatingIncome(),
+                statement.getTotalDebtService(),
+                statement.getIntangibleAssets(),
+                statement.getEbitda(),
+                statement.getFixedCharges(),
+                statement.getInventory(),
+                statement.getTotalAssets(),
+                statement.getTotalLiabilities(),
                 statement.getSubmissionTimestampUtc()
         );
     }

@@ -1,0 +1,16 @@
+package com.covenantiq.enums;
+
+public enum ActivityEventType {
+    LOAN_CREATED,
+    LOAN_UPDATED,
+    LOAN_CLOSED,
+    COVENANT_CREATED,
+    STATEMENT_SUBMITTED,
+    ALERT_ACKNOWLEDGED,
+    ALERT_RESOLVED,
+    COMMENT_ADDED,
+    COMMENT_DELETED,
+    USER_CREATED,
+    USER_UPDATED,
+    USER_DEACTIVATED
+}

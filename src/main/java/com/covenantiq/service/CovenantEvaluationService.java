@@ -73,10 +73,7 @@ public class CovenantEvaluationService {
     }
 
     private BigDecimal getActualValue(Covenant covenant, FinancialStatement statement) {
-        return switch (covenant.getType()) {
-            case CURRENT_RATIO -> financialRatioService.calculateCurrentRatio(statement);
-            case DEBT_TO_EQUITY -> financialRatioService.calculateDebtToEquity(statement);
-        };
+        return financialRatioService.calculateByCovenantType(covenant.getType(), statement);
     }
 
     private boolean compare(BigDecimal actual, BigDecimal threshold, ComparisonType type) {

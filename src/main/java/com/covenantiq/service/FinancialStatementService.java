@@ -5,6 +5,7 @@ import com.covenantiq.domain.CovenantResult;
 import com.covenantiq.domain.FinancialStatement;
 import com.covenantiq.domain.Loan;
 import com.covenantiq.dto.request.SubmitFinancialStatementRequest;
+import com.covenantiq.enums.ActivityEventType;
 import com.covenantiq.exception.UnprocessableEntityException;
 import com.covenantiq.repository.AlertRepository;
 import com.covenantiq.repository.CovenantResultRepository;
@@ -25,6 +26,7 @@ public class FinancialStatementService {
     private final AlertRepository alertRepository;
     private final CovenantEvaluationService covenantEvaluationService;
     private final TrendAnalysisService trendAnalysisService;
+    private final ActivityLogService activityLogService;
 
     public FinancialStatementService(
             LoanService loanService,
@@ -32,7 +34,8 @@ public class FinancialStatementService {
             CovenantResultRepository covenantResultRepository,
             AlertRepository alertRepository,
             CovenantEvaluationService covenantEvaluationService,
-            TrendAnalysisService trendAnalysisService
+            TrendAnalysisService trendAnalysisService,
+            ActivityLogService activityLogService
     ) {
         this.loanService = loanService;
         this.financialStatementRepository = financialStatementRepository;
@@ -40,6 +43,7 @@ public class FinancialStatementService {
         this.alertRepository = alertRepository;
         this.covenantEvaluationService = covenantEvaluationService;
         this.trendAnalysisService = trendAnalysisService;
+        this.activityLogService = activityLogService;
     }
 
     @Transactional
@@ -63,11 +67,26 @@ public class FinancialStatementService {
         statement.setTotalEquity(request.totalEquity());
         statement.setEbit(request.ebit());
         statement.setInterestExpense(request.interestExpense());
+        statement.setNetOperatingIncome(request.netOperatingIncome());
+        statement.setTotalDebtService(request.totalDebtService());
+        statement.setIntangibleAssets(request.intangibleAssets());
+        statement.setEbitda(request.ebitda());
+        statement.setFixedCharges(request.fixedCharges());
+        statement.setInventory(request.inventory());
+        statement.setTotalAssets(request.totalAssets());
+        statement.setTotalLiabilities(request.totalLiabilities());
         statement.setSubmissionTimestampUtc(normalizeToUtc(request.submissionTimestamp()));
 
         FinancialStatement saved = financialStatementRepository.save(statement);
         covenantEvaluationService.evaluateAndPersist(loan, saved);
         trendAnalysisService.evaluateAndPersist(loan, saved);
+        activityLogService.logEvent(
+                ActivityEventType.STATEMENT_SUBMITTED,
+                "FinancialStatement",
+                saved.getId(),
+                loanId,
+                "Statement submitted for " + request.periodType() + " " + request.fiscalYear()
+        );
         return saved;
     }
 

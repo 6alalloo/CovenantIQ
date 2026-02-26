@@ -62,6 +62,7 @@ public class DataInitializer {
     ) {
         UserAccount user = new UserAccount();
         user.setUsername(username);
+        user.setEmail(username);
         user.setPasswordHash(passwordEncoder.encode(password));
         user.setRolesCsv(rolesCsv);
         user.setActive(true);
@@ -91,6 +92,42 @@ public class DataInitializer {
                 ComparisonType.LESS_THAN_EQUAL,
                 SeverityLevel.MEDIUM
         ));
+        covenantService.createCovenant(loanId, new CreateCovenantRequest(
+                CovenantType.DSCR,
+                new BigDecimal("1.20"),
+                ComparisonType.GREATER_THAN_EQUAL,
+                SeverityLevel.HIGH
+        ));
+        covenantService.createCovenant(loanId, new CreateCovenantRequest(
+                CovenantType.INTEREST_COVERAGE,
+                new BigDecimal("2.00"),
+                ComparisonType.GREATER_THAN_EQUAL,
+                SeverityLevel.MEDIUM
+        ));
+        covenantService.createCovenant(loanId, new CreateCovenantRequest(
+                CovenantType.TANGIBLE_NET_WORTH,
+                new BigDecimal("2000000"),
+                ComparisonType.GREATER_THAN_EQUAL,
+                SeverityLevel.MEDIUM
+        ));
+        covenantService.createCovenant(loanId, new CreateCovenantRequest(
+                CovenantType.DEBT_TO_EBITDA,
+                new BigDecimal("4.00"),
+                ComparisonType.LESS_THAN_EQUAL,
+                SeverityLevel.HIGH
+        ));
+        covenantService.createCovenant(loanId, new CreateCovenantRequest(
+                CovenantType.FIXED_CHARGE_COVERAGE,
+                new BigDecimal("1.50"),
+                ComparisonType.GREATER_THAN_EQUAL,
+                SeverityLevel.MEDIUM
+        ));
+        covenantService.createCovenant(loanId, new CreateCovenantRequest(
+                CovenantType.QUICK_RATIO,
+                new BigDecimal("1.00"),
+                ComparisonType.GREATER_THAN_EQUAL,
+                SeverityLevel.LOW
+        ));
 
         financialStatementService.submitStatement(loanId, new SubmitFinancialStatementRequest(
                 PeriodType.QUARTERLY,
@@ -102,6 +139,14 @@ public class DataInitializer {
                 new BigDecimal("3000000"),
                 new BigDecimal("500000"),
                 new BigDecimal("120000"),
+                new BigDecimal("700000"),
+                new BigDecimal("400000"),
+                new BigDecimal("250000"),
+                new BigDecimal("620000"),
+                new BigDecimal("90000"),
+                new BigDecimal("300000"),
+                new BigDecimal("9800000"),
+                new BigDecimal("6100000"),
                 OffsetDateTime.of(2025, 3, 30, 12, 0, 0, 0, ZoneOffset.UTC)
         ));
 
@@ -115,6 +160,14 @@ public class DataInitializer {
                 new BigDecimal("2800000"),
                 new BigDecimal("460000"),
                 new BigDecimal("130000"),
+                new BigDecimal("660000"),
+                new BigDecimal("420000"),
+                new BigDecimal("260000"),
+                new BigDecimal("590000"),
+                new BigDecimal("95000"),
+                new BigDecimal("320000"),
+                new BigDecimal("9900000"),
+                new BigDecimal("6400000"),
                 OffsetDateTime.of(2025, 6, 30, 12, 0, 0, 0, ZoneOffset.UTC)
         ));
 
@@ -128,7 +181,36 @@ public class DataInitializer {
                 new BigDecimal("2500000"),
                 new BigDecimal("430000"),
                 new BigDecimal("140000"),
+                new BigDecimal("630000"),
+                new BigDecimal("430000"),
+                new BigDecimal("275000"),
+                new BigDecimal("560000"),
+                new BigDecimal("100000"),
+                new BigDecimal("340000"),
+                new BigDecimal("10050000"),
+                new BigDecimal("6750000"),
                 OffsetDateTime.of(2025, 9, 30, 12, 0, 0, 0, ZoneOffset.UTC)
+        ));
+
+        financialStatementService.submitStatement(loanId, new SubmitFinancialStatementRequest(
+                PeriodType.QUARTERLY,
+                2026,
+                3,
+                new BigDecimal("3000000"),
+                new BigDecimal("1000000"),
+                new BigDecimal("6450000"),
+                new BigDecimal("2600000"),
+                new BigDecimal("520000"),
+                new BigDecimal("125000"),
+                new BigDecimal("760000"),
+                new BigDecimal("410000"),
+                new BigDecimal("285000"),
+                new BigDecimal("700000"),
+                new BigDecimal("115000"),
+                new BigDecimal("310000"),
+                new BigDecimal("10150000"),
+                new BigDecimal("6850000"),
+                OffsetDateTime.of(2026, 9, 30, 12, 0, 0, 0, ZoneOffset.UTC)
         ));
     }
 }

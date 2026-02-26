@@ -3,6 +3,7 @@ package com.covenantiq.service;
 import com.covenantiq.domain.Covenant;
 import com.covenantiq.domain.Loan;
 import com.covenantiq.dto.request.CreateCovenantRequest;
+import com.covenantiq.enums.ActivityEventType;
 import com.covenantiq.exception.ConflictException;
 import com.covenantiq.repository.CovenantRepository;
 import org.springframework.stereotype.Service;
@@ -15,10 +16,16 @@ public class CovenantService {
 
     private final CovenantRepository covenantRepository;
     private final LoanService loanService;
+    private final ActivityLogService activityLogService;
 
-    public CovenantService(CovenantRepository covenantRepository, LoanService loanService) {
+    public CovenantService(
+            CovenantRepository covenantRepository,
+            LoanService loanService,
+            ActivityLogService activityLogService
+    ) {
         this.covenantRepository = covenantRepository;
         this.loanService = loanService;
+        this.activityLogService = activityLogService;
     }
 
     @Transactional
@@ -36,7 +43,15 @@ public class CovenantService {
         covenant.setThresholdValue(request.thresholdValue());
         covenant.setComparisonType(request.comparisonType());
         covenant.setSeverityLevel(request.severityLevel());
-        return covenantRepository.save(covenant);
+        Covenant saved = covenantRepository.save(covenant);
+        activityLogService.logEvent(
+                ActivityEventType.COVENANT_CREATED,
+                "Covenant",
+                saved.getId(),
+                loanId,
+                "Covenant " + saved.getType() + " created"
+        );
+        return saved;
     }
 
     @Transactional(readOnly = true)
