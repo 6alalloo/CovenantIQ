@@ -4,6 +4,8 @@ import { getCovenantResults } from "../api/client";
 import type { CovenantResult, CovenantResultStatus } from "../types/api";
 import { Surface } from "../components/layout";
 import { Badge } from "../components/ui/badge";
+import { Select } from "../components/ui/select";
+import { formatDateTime, formatEnumLabel } from "../lib/format";
 
 export function LoanResultsPage() {
   const { loanId } = useParams();
@@ -29,14 +31,14 @@ export function LoanResultsPage() {
   );
 
   return (
-    <Surface className="p-4">
+    <Surface className="p-5">
       <div className="mb-3 flex items-center justify-between">
         <h2 className="panel-title">Covenant Evaluation Timeline</h2>
-        <select className="input w-56" value={status} onChange={(event) => setStatus(event.target.value as typeof status)}>
+        <Select className="w-56" value={status} onChange={(event) => setStatus(event.target.value as typeof status)}>
           <option value="ALL">All statuses</option>
-          <option value="PASS">PASS</option>
-          <option value="BREACH">BREACH</option>
-        </select>
+          <option value="PASS">{formatEnumLabel("PASS")}</option>
+          <option value="BREACH">{formatEnumLabel("BREACH")}</option>
+        </Select>
       </div>
       <table className="table-base">
         <thead>
@@ -52,10 +54,10 @@ export function LoanResultsPage() {
           {filtered.map((row) => (
             <tr key={row.id}>
               <td className="font-numeric">{row.id}</td>
-              <td>{row.covenantType}</td>
+              <td>{formatEnumLabel(row.covenantType)}</td>
               <td className="font-numeric">{row.actualValue}</td>
-              <td><Badge>{row.status}</Badge></td>
-              <td>{row.evaluationTimestampUtc}</td>
+              <td><Badge>{formatEnumLabel(row.status)}</Badge></td>
+              <td>{formatDateTime(row.evaluationTimestampUtc)}</td>
             </tr>
           ))}
         </tbody>

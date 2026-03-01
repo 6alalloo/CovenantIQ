@@ -5,6 +5,7 @@ import type { CommentResponse } from "../types/api";
 import { Surface } from "../components/layout";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
+import { formatDateTime } from "../lib/format";
 
 export function LoanCommentsPage() {
   const { loanId } = useParams();
@@ -48,7 +49,7 @@ export function LoanCommentsPage() {
   };
 
   return (
-    <Surface className="p-4">
+    <Surface className="p-5">
       <h2 className="panel-title">Collaboration Notes</h2>
       <form className="mt-3 flex gap-2" onSubmit={onSubmit}>
         <Input
@@ -63,11 +64,11 @@ export function LoanCommentsPage() {
 
       <div className="mt-4 space-y-2">
         {comments.map((comment) => (
-          <article key={comment.id} className="rounded-sm border border-[var(--border-default)] bg-[var(--bg-surface-2)] p-3">
-            <div className="mb-2 flex items-start justify-between">
-              <p className="text-xs text-[var(--text-secondary)]">
-                {comment.createdBy} | {comment.createdAt}
-              </p>
+          <article key={comment.id} className="rounded-md border border-[var(--border-default)] bg-[var(--bg-surface-2)] p-3">
+              <div className="mb-2 flex items-start justify-between">
+                <p className="text-xs text-[var(--text-secondary)]">
+                  {comment.createdBy} | {formatDateTime(comment.createdAt)}
+                </p>
               <Button variant="ghost" className="h-auto px-0 py-0 text-xs text-[var(--risk-high)]" onClick={() => void onDelete(comment.id)} type="button">
                 Delete
               </Button>

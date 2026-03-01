@@ -4,6 +4,7 @@ import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis } from "recharts";
 import { getPortfolioSummary } from "../api/client";
 import type { PortfolioSummary } from "../types/api";
 import { PageSection, StatCard, Surface } from "../components/layout";
+import { chartTokenValue } from "../theme/theme";
 
 export function PortfolioPage() {
   const [summary, setSummary] = useState<PortfolioSummary | null>(null);
@@ -38,35 +39,49 @@ export function PortfolioPage() {
       </div>
 
       <div className="mt-3 grid gap-3 xl:grid-cols-3">
-        <Surface className="xl:col-span-2 p-4">
+        <Surface className="xl:col-span-2 p-5">
           <h2 className="panel-title">Risk Trend</h2>
           <div className="mt-2 h-64">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={trendData}>
                 <defs>
                   <linearGradient id="riskFade" x1="0" x2="0" y1="0" y2="1">
-                    <stop offset="0%" stopColor="#ffffff" stopOpacity={0.24} />
-                    <stop offset="100%" stopColor="#ffffff" stopOpacity={0} />
+                    <stop offset="0%" stopColor={chartTokenValue.accent} stopOpacity={0.35} />
+                    <stop offset="100%" stopColor={chartTokenValue.accent} stopOpacity={0.03} />
                   </linearGradient>
                 </defs>
-                <XAxis dataKey="month" stroke="#71767a" tick={{ fontSize: 11 }} />
+                <XAxis dataKey="month" stroke={chartTokenValue.neutral1} tick={{ fontSize: 11 }} />
                 <Tooltip />
                 <Area
                   type="monotone"
                   dataKey="high"
                   stackId="risk"
-                  stroke="#ffffff"
+                  stroke={chartTokenValue.high}
                   fill="url(#riskFade)"
                   fillOpacity={1}
                 />
-                <Area type="monotone" dataKey="medium" stackId="risk" stroke="#c9cdd1" fill="#c9cdd1" fillOpacity={0.12} />
-                <Area type="monotone" dataKey="low" stackId="risk" stroke="#a8adb3" fill="#a8adb3" fillOpacity={0.08} />
+                <Area
+                  type="monotone"
+                  dataKey="medium"
+                  stackId="risk"
+                  stroke={chartTokenValue.medium}
+                  fill={chartTokenValue.medium}
+                  fillOpacity={0.14}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="low"
+                  stackId="risk"
+                  stroke={chartTokenValue.low}
+                  fill={chartTokenValue.low}
+                  fillOpacity={0.1}
+                />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </Surface>
 
-        <Surface className="p-4">
+        <Surface className="p-5">
           <h2 className="panel-title">Drill-through</h2>
           <div className="mt-3 grid gap-2">
             <Link className="btn-secondary text-center" to="/app/loans?risk=HIGH">

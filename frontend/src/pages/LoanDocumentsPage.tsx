@@ -9,9 +9,10 @@ import {
 } from "../api/client";
 import type { AttachmentMetadata, CovenantResult } from "../types/api";
 import { Surface } from "../components/layout";
-import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
+import { Select } from "../components/ui/select";
+import { formatDateTime } from "../lib/format";
 
 export function LoanDocumentsPage() {
   const { loanId } = useParams();
@@ -99,11 +100,10 @@ export function LoanDocumentsPage() {
   };
 
   return (
-    <Surface className="p-4">
+    <Surface className="p-5">
       <h2 className="panel-title">Statement Attachments</h2>
       <div className="mt-3 grid gap-3 md:grid-cols-[1fr_auto_auto]">
-        <select
-          className="input"
+        <Select
           value={selectedStatementId ?? ""}
           onChange={(event) => setSelectedStatementId(Number(event.target.value))}
         >
@@ -112,7 +112,7 @@ export function LoanDocumentsPage() {
               Statement #{id}
             </option>
           ))}
-        </select>
+        </Select>
         <Input type="file" onChange={(event) => setFile(event.target.files?.[0] ?? null)} />
         <Button type="button" onClick={() => void onUpload()}>
           Upload
@@ -135,7 +135,7 @@ export function LoanDocumentsPage() {
               <td>{item.filename}</td>
               <td className="font-numeric">{item.fileSize.toLocaleString()}</td>
               <td>{item.uploadedBy}</td>
-              <td><Badge>{item.uploadedAt}</Badge></td>
+              <td className="text-xs text-[var(--text-secondary)]">{formatDateTime(item.uploadedAt)}</td>
               <td className="text-right">
                 <div className="flex justify-end gap-2">
                   <Button variant="outline" onClick={() => void onDownload(item.id, item.filename)}>

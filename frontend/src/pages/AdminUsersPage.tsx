@@ -4,6 +4,7 @@ import type { UserResponse, UserRole } from "../types/api";
 import { PageSection, Surface } from "../components/layout";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
+import { formatEnumLabel } from "../lib/format";
 
 const ROLE_OPTIONS: UserRole[] = ["ANALYST", "RISK_LEAD", "ADMIN"];
 
@@ -64,7 +65,7 @@ export function AdminUsersPage() {
   return (
     <PageSection title="User Management" subtitle="Admin-only user lifecycle: create, role edit, and deactivate.">
       <div className="grid gap-3 xl:grid-cols-[1.3fr_1fr]">
-        <Surface className="p-4">
+        <Surface className="p-5">
           <h2 className="panel-title">Users</h2>
           <table className="table-base mt-2">
             <thead>
@@ -87,19 +88,20 @@ export function AdminUsersPage() {
                       {ROLE_OPTIONS.map((role) => (
                         <button
                           key={role}
-                          className={`rounded-sm border px-2 py-1 text-[11px] uppercase tracking-[0.06em] ${
+                          className={`rounded-md border px-2 py-1 text-[11px] uppercase tracking-[0.06em] ${
                             user.roles.includes(role)
-                              ? "border-[var(--accent-interactive)] bg-[color:rgb(142_184_255_/_0.13)] text-[var(--text-primary)]"
-                              : "border-[var(--border-default)] bg-[#0e0e0e] text-[var(--text-secondary)]"
+                              ? "border-[var(--accent-primary)] bg-[var(--accent-soft)] text-[var(--text-primary)]"
+                              : "border-[var(--border-default)] bg-[var(--bg-surface-2)] text-[var(--text-secondary)]"
                           }`}
+                          type="button"
                           onClick={() => void onToggleRole(user, role)}
                         >
-                          {role}
+                          {formatEnumLabel(role)}
                         </button>
                       ))}
                     </div>
                   </td>
-                  <td>{user.active ? "YES" : "NO"}</td>
+                  <td>{user.active ? "Active" : "Inactive"}</td>
                   <td className="text-right">
                     {user.active ? (
                       <Button variant="outline" onClick={() => void onDeactivate(user.id)}>
@@ -113,7 +115,7 @@ export function AdminUsersPage() {
           </table>
         </Surface>
 
-        <Surface className="p-4">
+        <Surface className="p-5">
           <h2 className="panel-title">Create User</h2>
           <form className="mt-3 space-y-3" onSubmit={onCreate}>
             <Input
@@ -153,7 +155,7 @@ export function AdminUsersPage() {
                       }))
                     }
                   />
-                  {role}
+                  {formatEnumLabel(role)}
                 </label>
               ))}
             </div>

@@ -21,13 +21,14 @@ export function LoanDetailLayoutPage() {
       subtitle="Nested operations for covenant setup, statements, alerts, and collaboration."
     >
       <Tabs value={pathKey} onValueChange={() => {}}>
-        <TabsList className="mb-3">
+        <TabsList className="mb-1">
           {TABS.map((tab) => (
             <NavLink key={tab.key} to={`/app/loans/${loanId}/${tab.key}`}>
               {({ isActive }) => (
                 <TabsTrigger
                   value={tab.key}
-                  className={isActive ? "border-[color:rgb(142_184_255_/_0.5)] bg-[color:rgb(142_184_255_/_0.14)] text-[var(--text-primary)]" : ""}
+                  data-testid={`loan-tab-${tab.key}`}
+                  className={isActive ? "border-[var(--accent-primary)] bg-[var(--accent-soft)] text-[var(--text-primary)]" : ""}
                 >
                   <span className="font-numeric text-[11px]">{tab.icon}</span>
                   {tab.label}

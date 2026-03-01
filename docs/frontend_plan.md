@@ -1,5 +1,7 @@
 # CovenantIQ Frontend IA and Page Plan (Feb 2026 Conventions)
 
+> Visual styling implementation and theming details now live in `docs/frontend_visual_redesign_plan.md`. Keep this file focused on IA, routes, feature scope, and delivery sequencing.
+
 ## Summary
 This plan defines a complete, implementation-ready frontend architecture for all requested pages using `/app/*` nested protected routes, core-first delivery, and explicit backend API gap closure.
 

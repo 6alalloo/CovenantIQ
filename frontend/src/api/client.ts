@@ -34,6 +34,10 @@ export class ApiError extends Error {
   }
 }
 
+type AuthenticatedRawRequest = RequestInit & {
+  headers?: HeadersInit;
+};
+
 function makeQuery(params: Record<string, string | number | undefined>) {
   const query = new URLSearchParams();
   Object.entries(params).forEach(([key, value]) => {
@@ -121,6 +125,43 @@ async function request<T>(path: string, init?: RequestInit, retry = true): Promi
   }
 
   return response.json() as Promise<T>;
+}
+
+async function requestRaw(path: string, init?: AuthenticatedRawRequest, retry = true): Promise<Response> {
+  const currentSession = getStoredSession();
+  const headers = new Headers(init?.headers);
+  if (currentSession?.accessToken) {
+    headers.set("Authorization", `Bearer ${currentSession.accessToken}`);
+  }
+
+  const response = await fetch(`${BASE}${path}`, {
+    ...init,
+    headers,
+  });
+
+  if (response.status === 401 && retry && currentSession?.refreshToken && !path.startsWith("/auth/")) {
+    const nextSession = await refreshSessionToken(currentSession.refreshToken);
+    if (nextSession) {
+      return requestRaw(path, init, false);
+    }
+    clearStoredSession();
+  }
+
+  if (!response.ok) {
+    let details: ProblemDetails | null = null;
+    try {
+      details = (await response.json()) as ProblemDetails;
+    } catch {
+      details = null;
+    }
+    throw new ApiError(
+      details?.detail ?? details?.title ?? `HTTP ${response.status}`,
+      response.status,
+      details?.correlationId
+    );
+  }
+
+  return response;
 }
 
 export async function login(username: string, password: string) {
@@ -313,9 +354,9 @@ export function deleteAttachment(attachmentId: number) {
 }
 
 export function exportLoanAlerts(loanId: number) {
-  return `${BASE}/loans/${loanId}/alerts/export`;
+  return requestRaw(`/loans/${loanId}/alerts/export`);
 }
 
 export function exportLoanCovenantResults(loanId: number) {
-  return `${BASE}/loans/${loanId}/covenant-results/export`;
+  return requestRaw(`/loans/${loanId}/covenant-results/export`);
 }

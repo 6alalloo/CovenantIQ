@@ -6,6 +6,8 @@ import { Surface } from "../components/layout";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
+import { Select } from "../components/ui/select";
+import { formatEnumLabel } from "../lib/format";
 
 const COVENANT_TYPES: CovenantType[] = [
   "CURRENT_RATIO",
@@ -68,14 +70,14 @@ export function LoanOverviewPage() {
 
   return (
     <div className="grid gap-3 xl:grid-cols-[1.5fr_1fr]">
-      <Surface className="p-4">
+      <Surface className="p-5">
         <h2 className="panel-title">Borrower Snapshot</h2>
         {loan ? (
           <div className="mt-3 grid gap-2 md:grid-cols-2">
             <Detail label="Borrower" value={loan.borrowerName} />
             <Detail label="Loan ID" value={`#${loan.id}`} mono />
             <Detail label="Principal" value={`$${Number(loan.principalAmount).toLocaleString()}`} mono />
-            <Detail label="Status" value={loan.status} />
+            <Detail label="Status" value={formatEnumLabel(loan.status)} />
           </div>
         ) : null}
 
@@ -92,30 +94,29 @@ export function LoanOverviewPage() {
           <tbody>
             {riskDetails?.details.map((detail) => (
               <tr key={detail.covenantId}>
-                <td>{detail.covenantType}</td>
+                <td>{formatEnumLabel(detail.covenantType)}</td>
                 <td className="font-numeric">{detail.actualValue}</td>
                 <td className="font-numeric">{detail.thresholdValue}</td>
-                <td><Badge>{detail.resultStatus}</Badge></td>
+                <td><Badge>{formatEnumLabel(detail.resultStatus)}</Badge></td>
               </tr>
             )) ?? null}
           </tbody>
         </table>
       </Surface>
 
-      <Surface className="p-4">
+      <Surface className="p-5">
         <h2 className="panel-title">Add Covenant</h2>
         <form className="mt-3 space-y-3" onSubmit={onSubmit}>
-          <select
-            className="input"
+          <Select
             value={form.type}
             onChange={(event) => setForm({ ...form, type: event.target.value as CovenantType })}
           >
             {COVENANT_TYPES.map((type) => (
               <option key={type} value={type}>
-                {type}
+                {formatEnumLabel(type)}
               </option>
             ))}
-          </select>
+          </Select>
           <Input
             className="font-numeric"
             type="number"
@@ -125,23 +126,21 @@ export function LoanOverviewPage() {
             onChange={(event) => setForm({ ...form, thresholdValue: event.target.value })}
             required
           />
-          <select
-            className="input"
+          <Select
             value={form.comparisonType}
             onChange={(event) => setForm({ ...form, comparisonType: event.target.value as ComparisonType })}
           >
-            <option value="GREATER_THAN_EQUAL">GREATER_THAN_EQUAL</option>
-            <option value="LESS_THAN_EQUAL">LESS_THAN_EQUAL</option>
-          </select>
-          <select
-            className="input"
+            <option value="GREATER_THAN_EQUAL">{formatEnumLabel("GREATER_THAN_EQUAL")}</option>
+            <option value="LESS_THAN_EQUAL">{formatEnumLabel("LESS_THAN_EQUAL")}</option>
+          </Select>
+          <Select
             value={form.severityLevel}
             onChange={(event) => setForm({ ...form, severityLevel: event.target.value as SeverityLevel })}
           >
-            <option value="LOW">LOW</option>
-            <option value="MEDIUM">MEDIUM</option>
-            <option value="HIGH">HIGH</option>
-          </select>
+            <option value="LOW">{formatEnumLabel("LOW")}</option>
+            <option value="MEDIUM">{formatEnumLabel("MEDIUM")}</option>
+            <option value="HIGH">{formatEnumLabel("HIGH")}</option>
+          </Select>
           <Button className="w-full" type="submit">
             Save Covenant
           </Button>
@@ -155,7 +154,7 @@ export function LoanOverviewPage() {
 
 function Detail({ label, value, mono = false }: { label: string; value: string; mono?: boolean }) {
   return (
-    <div className="rounded-sm border border-[var(--border-default)] bg-[var(--bg-surface-2)] p-3">
+    <div className="rounded-md border border-[var(--border-default)] bg-[var(--bg-surface-2)] p-3">
       <p className="text-[11px] uppercase tracking-[0.08em] text-[var(--text-secondary)]">{label}</p>
       <p className={`mt-1 text-sm ${mono ? "font-numeric" : ""}`}>{value}</p>
     </div>

@@ -4,7 +4,7 @@ import { BrandLogo } from "../components/BrandLogo";
 export function NotFoundPage() {
   return (
     <div className="grid min-h-screen place-items-center p-6">
-      <div className="card w-full max-w-lg p-8 text-center">
+      <div className="card w-full max-w-lg p-9 text-center">
         <div className="mb-6 flex justify-center">
           <BrandLogo size="sm" />
         </div>

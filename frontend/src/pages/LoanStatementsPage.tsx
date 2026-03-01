@@ -5,6 +5,8 @@ import type { CovenantResult, PeriodType } from "../types/api";
 import { Surface } from "../components/layout";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
+import { Select } from "../components/ui/select";
+import { formatDateTime, formatEnumLabel } from "../lib/format";
 
 export function LoanStatementsPage() {
   const { loanId } = useParams();
@@ -86,7 +88,7 @@ export function LoanStatementsPage() {
 
   return (
     <div className="grid gap-3 xl:grid-cols-[1.2fr_1fr]">
-      <Surface className="p-4">
+      <Surface className="p-5">
         <h2 className="panel-title">Statement History</h2>
         <p className="mt-1 text-xs text-[var(--text-secondary)]">
           History is inferred from evaluation results until statement-list endpoint is added.
@@ -103,25 +105,24 @@ export function LoanStatementsPage() {
             {statementHistory.map((item) => (
               <tr key={item.financialStatementId}>
                 <td className="font-numeric">{item.financialStatementId}</td>
-                <td>{item.covenantType}</td>
-                <td>{item.evaluationTimestampUtc}</td>
+                <td>{formatEnumLabel(item.covenantType)}</td>
+                <td>{formatDateTime(item.evaluationTimestampUtc)}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </Surface>
 
-      <Surface className="p-4">
+      <Surface className="p-5">
         <h2 className="panel-title">Submit Statement</h2>
         <form className="mt-3 space-y-2" onSubmit={handleSubmit}>
-          <select
-            className="input"
+          <Select
             value={form.periodType}
             onChange={(event) => setForm({ ...form, periodType: event.target.value as PeriodType })}
           >
-            <option value="QUARTERLY">QUARTERLY</option>
-            <option value="ANNUAL">ANNUAL</option>
-          </select>
+            <option value="QUARTERLY">{formatEnumLabel("QUARTERLY")}</option>
+            <option value="ANNUAL">{formatEnumLabel("ANNUAL")}</option>
+          </Select>
           <Input
             type="number"
             placeholder="Fiscal year"
@@ -129,8 +130,7 @@ export function LoanStatementsPage() {
             onChange={(event) => setForm({ ...form, fiscalYear: event.target.value })}
           />
           {form.periodType === "QUARTERLY" ? (
-            <select
-              className="input"
+            <Select
               value={form.fiscalQuarter}
               onChange={(event) => setForm({ ...form, fiscalQuarter: event.target.value })}
             >
@@ -138,7 +138,7 @@ export function LoanStatementsPage() {
               <option value="2">Q2</option>
               <option value="3">Q3</option>
               <option value="4">Q4</option>
-            </select>
+            </Select>
           ) : null}
           <Input
             placeholder="Current assets"

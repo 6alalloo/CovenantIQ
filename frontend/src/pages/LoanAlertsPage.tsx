@@ -5,6 +5,7 @@ import type { Alert, AlertStatus } from "../types/api";
 import { Surface } from "../components/layout";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
+import { formatAlertMessage, formatEnumLabel } from "../lib/format";
 
 export function LoanAlertsPage() {
   const { loanId } = useParams();
@@ -37,9 +38,9 @@ export function LoanAlertsPage() {
   };
 
   return (
-    <Surface className="p-4">
+    <Surface className="p-5">
       <h2 className="panel-title">Loan Alert Operations</h2>
-      <table className="table-base mt-3">
+      <table className="table-base mt-3" data-testid="loan-alerts-table">
         <thead>
           <tr>
             <th>ID</th>
@@ -54,27 +55,40 @@ export function LoanAlertsPage() {
           {alerts.map((alert) => (
             <tr
               key={alert.id}
-              className={focusAlert && Number(focusAlert) === alert.id ? "bg-[color:rgb(142_184_255_/_0.16)]" : ""}
+              data-testid={`alert-row-${alert.id}`}
+              className={focusAlert && Number(focusAlert) === alert.id ? "bg-[var(--accent-soft)]" : ""}
             >
               <td className="font-numeric">{alert.id}</td>
-              <td>{alert.alertType}</td>
-              <td><Badge>{alert.severityLevel}</Badge></td>
-              <td><Badge>{alert.status}</Badge></td>
-              <td>{alert.message}</td>
+              <td>{formatEnumLabel(alert.alertType)}</td>
+              <td><Badge>{formatEnumLabel(alert.severityLevel)}</Badge></td>
+              <td data-testid={`alert-status-${alert.id}`}><Badge>{formatEnumLabel(alert.status)}</Badge></td>
+              <td>{formatAlertMessage(alert.message)}</td>
               <td>
                 <div className="flex gap-2">
                   {alert.status === "OPEN" ? (
-                    <Button variant="outline" onClick={() => void transition(alert.id, "ACKNOWLEDGED")}>
+                    <Button
+                      variant="outline"
+                      data-testid={`alert-ack-${alert.id}`}
+                      onClick={() => void transition(alert.id, "ACKNOWLEDGED")}
+                    >
                       Acknowledge
                     </Button>
                   ) : null}
                   {(alert.status === "OPEN" || alert.status === "ACKNOWLEDGED") && (
-                    <Button variant="outline" onClick={() => void transition(alert.id, "UNDER_REVIEW")}>
+                    <Button
+                      variant="outline"
+                      data-testid={`alert-review-${alert.id}`}
+                      onClick={() => void transition(alert.id, "UNDER_REVIEW")}
+                    >
                       Review
                     </Button>
                   )}
                   {alert.status !== "RESOLVED" ? (
-                    <Button variant="outline" onClick={() => void transition(alert.id, "RESOLVED")}>
+                    <Button
+                      variant="outline"
+                      data-testid={`alert-resolve-${alert.id}`}
+                      onClick={() => void transition(alert.id, "RESOLVED")}
+                    >
                       Resolve
                     </Button>
                   ) : null}

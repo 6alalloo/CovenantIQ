@@ -1,6 +1,7 @@
-import { NavLink, Outlet, useLocation } from "react-router-dom";
+import { NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import type { UserRole } from "../types/api";
+import { formatEnumLabel } from "../lib/format";
 import { BrandLogo } from "./BrandLogo";
 
 type MenuItem = {
@@ -22,60 +23,59 @@ const MENU: MenuItem[] = [
 
 export function AppShell() {
   const { userName, roles, logout } = useAuth();
-  const location = useLocation();
   const visibleItems = MENU.filter((item) => item.roles.some((role) => roles.includes(role)));
 
   return (
-    <div className="min-h-screen lg:grid lg:grid-cols-[258px_1fr]">
-      <aside className="relative border-r border-[var(--border-default)] bg-[var(--bg-surface-1)] p-4">
-        <div className="absolute inset-y-0 left-0 w-[2px] bg-gradient-to-b from-transparent via-[var(--accent-interactive)] to-transparent" />
+    <div className="min-h-screen md:grid md:grid-cols-[88px_1fr] xl:grid-cols-[260px_1fr]">
+      <aside className="relative border-b border-[var(--border-default)] bg-[var(--bg-surface-1)] p-3 md:min-h-screen md:border-b-0 md:border-r md:p-4">
+        <div className="absolute inset-y-0 left-0 hidden w-[2px] bg-gradient-to-b from-transparent via-[var(--accent-primary)] to-transparent xl:block" />
 
-        <div className="mb-7 rounded-sm border border-[var(--border-default)] bg-[var(--bg-surface-2)] p-4">
-          <BrandLogo size="sm" />
-          <p className="mt-3 text-xs text-[var(--text-secondary)]">Secure covenant risk monitoring workspace</p>
+        <div className="mb-5 rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface-2)] p-3 xl:mb-7 xl:p-4">
+          <BrandLogo size="sm" withText={false} className="justify-center xl:justify-start" />
+          <p className="mt-3 hidden text-base font-semibold tracking-[-0.01em] text-[var(--text-primary)] xl:block">CovenantIQ</p>
+          <p className="mt-1 hidden text-xs text-[var(--text-secondary)] xl:block">
+            Secure covenant risk monitoring workspace
+          </p>
         </div>
 
-        <nav className="space-y-1.5">
+        <nav className="grid grid-cols-3 gap-2 md:grid-cols-1 md:gap-1.5">
           {visibleItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
+              data-testid={`nav-${item.label.toLowerCase()}`}
               className={({ isActive }) =>
-                `group flex items-center gap-2 rounded-sm border px-3 py-2 text-sm transition ${
+                `group flex items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm font-semibold transition-colors duration-150 md:justify-center xl:justify-start ${
                   isActive
-                    ? "border-[color:rgb(142_184_255_/_0.45)] bg-[color:rgb(142_184_255_/_0.12)] text-[var(--text-primary)]"
-                    : "border-transparent text-[var(--text-secondary)] hover:border-[var(--border-default)] hover:bg-[color:rgb(255_255_255_/_0.02)] hover:text-[var(--text-primary)]"
+                    ? "border-[var(--accent-primary)] bg-[var(--accent-soft)] text-[var(--text-primary)]"
+                    : "border-transparent text-[var(--text-secondary)] hover:border-[var(--border-default)] hover:bg-[var(--bg-surface-2)] hover:text-[var(--text-primary)]"
                 }`
               }
             >
-              <span className="grid h-6 w-6 place-items-center rounded-sm border border-[var(--border-default)] bg-black/70 text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]">
+              <span className="grid h-7 w-7 place-items-center rounded-md border border-[var(--border-default)] bg-[var(--bg-surface-3)] text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]">
                 <NavIcon kind={item.icon} />
               </span>
-              {item.label}
+              <span className="hidden xl:inline">{item.label}</span>
             </NavLink>
           ))}
         </nav>
       </aside>
 
       <div className="min-w-0">
-        <header className="sticky top-0 z-10 border-b border-[var(--border-default)] bg-[color:rgb(6_6_6_/_0.9)] px-5 py-3 backdrop-blur">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-[10px] uppercase tracking-[0.16em] text-[var(--text-secondary)]">Active Route</p>
-              <p className="font-numeric text-xs text-[var(--accent-interactive)]">{location.pathname}</p>
-            </div>
+        <header className="sticky top-0 z-10 h-14 border-b border-[var(--border-default)] bg-[var(--bg-surface-1)] px-4 md:px-5">
+          <div className="flex h-full items-center justify-end gap-3">
             <div className="flex items-center gap-3">
-              <p className="text-xs text-[var(--text-secondary)]">
-                {userName} | {roles.join(", ")}
+              <p className="hidden text-xs text-[var(--text-secondary)] md:block">
+                {userName} | {roles.map((role) => formatEnumLabel(role)).join(", ")}
               </p>
-              <button type="button" className="btn-secondary" onClick={logout}>
+              <button type="button" className="btn-secondary" onClick={logout} data-testid="logout-button">
                 Logout
               </button>
             </div>
           </div>
         </header>
 
-        <main className="p-5 md:p-6">
+        <main className="p-4 md:p-5 xl:p-6">
           <Outlet />
         </main>
       </div>

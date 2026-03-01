@@ -30,17 +30,22 @@ export function LoginPage() {
 
   return (
     <div className="grid min-h-screen place-items-center p-6">
-      <form onSubmit={onSubmit} className="card w-full max-w-sm p-7">
-        <div className="mb-5">
+      <form onSubmit={onSubmit} className="card w-full max-w-md p-8" data-testid="login-form">
+        <div className="mb-6">
           <BrandLogo size="sm" />
           <p className="mt-2 text-[10px] uppercase tracking-[0.16em] text-[var(--text-secondary)]">Secure Access</p>
         </div>
-        <p className="text-xs text-[var(--text-secondary)]">
+        <p className="text-sm text-[var(--text-secondary)]">
           Use seeded credentials. Analyst: `analyst@demo.com` / `Demo123!`
         </p>
 
         <label className="mt-5 block text-xs uppercase tracking-[0.08em] text-[var(--text-secondary)]">Username</label>
-        <input className="input mt-2" value={username} onChange={(e) => setUsername(e.target.value)} />
+        <input
+          className="input mt-2"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          data-testid="login-username"
+        />
 
         <label className="mt-3 block text-xs uppercase tracking-[0.08em] text-[var(--text-secondary)]">Password</label>
         <input
@@ -48,11 +53,16 @@ export function LoginPage() {
           className="input mt-2"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          data-testid="login-password"
         />
 
-        {error ? <p className="mt-4 text-sm text-[var(--risk-high)]">{error}</p> : null}
+        {error ? (
+          <p className="mt-4 text-sm text-[var(--risk-high)]" data-testid="login-error">
+            {error}
+          </p>
+        ) : null}
 
-        <button type="submit" className="btn-primary mt-5 w-full" disabled={isLoading}>
+        <button type="submit" className="btn-primary mt-5 w-full" disabled={isLoading} data-testid="login-submit">
           {isLoading ? "Signing in..." : "Sign In"}
         </button>
       </form>

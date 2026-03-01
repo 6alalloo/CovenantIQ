@@ -12,11 +12,11 @@ export function PageSection({
   children: ReactNode;
 }) {
   return (
-    <section className="page-enter">
-      <div className="mb-3 flex items-end justify-between gap-3">
+    <section className="page-enter space-y-4">
+      <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-[23px] font-semibold tracking-[-0.01em]">{title}</h1>
-          {subtitle ? <p className="mt-1 text-xs text-[var(--text-secondary)]">{subtitle}</p> : null}
+          <h1 className="text-[25px] leading-tight">{title}</h1>
+          {subtitle ? <p className="mt-1 text-sm text-[var(--text-secondary)]">{subtitle}</p> : null}
         </div>
         {action}
       </div>
@@ -35,7 +35,7 @@ export function StatCard({
   tone?: "HIGH" | "MEDIUM" | "LOW";
 }) {
   return (
-    <article className="card p-4">
+    <article className="card p-5">
       <p className="text-[11px] uppercase tracking-[0.08em] text-[var(--text-secondary)]">{label}</p>
       <p
         className={`font-numeric mt-2 text-3xl font-semibold leading-none ${

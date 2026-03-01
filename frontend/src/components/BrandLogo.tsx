@@ -16,20 +16,22 @@ export function BrandLogo({
     <div className={cn("flex items-center gap-3", className)}>
       <span
         className={cn(
-          "grid place-items-center rounded-sm border border-[var(--border-default)] bg-[linear-gradient(145deg,#151515,#0b0b0b)]",
+          "grid place-items-center rounded-md border border-[var(--border-default)] bg-[linear-gradient(145deg,var(--bg-surface-3),var(--bg-surface-2))]",
           iconSize
         )}
       >
         <ShieldMark className={size === "lg" ? "h-8 w-8" : size === "sm" ? "h-5 w-5" : "h-7 w-7"} />
       </span>
-      {withText ? <span className={cn("font-semibold tracking-[-0.02em] text-white", textSize)}>CovenantIQ</span> : null}
+      {withText ? (
+        <span className={cn("font-semibold tracking-[-0.02em] text-[var(--text-primary)]", textSize)}>CovenantIQ</span>
+      ) : null}
     </div>
   );
 }
 
 function ShieldMark({ className }: { className?: string }) {
   return (
-    <svg className={cn("text-white", className)} viewBox="0 0 24 24" fill="none" aria-hidden>
+    <svg className={cn("text-[var(--text-primary)]", className)} viewBox="0 0 24 24" fill="none" aria-hidden>
       <path
         d="M12 2.75c2.2 1.93 5.2 3.1 8.34 3.26v5.47c0 5.24-3.2 8.83-8.34 9.77-5.14-.94-8.34-4.53-8.34-9.77V6.01C6.8 5.85 9.8 4.68 12 2.75Z"
         stroke="currentColor"
@@ -38,7 +40,7 @@ function ShieldMark({ className }: { className?: string }) {
       <path
         d="M12 6.2c1.53 1.22 3.43 2 5.47 2.2v3.2c0 3.5-2 5.9-5.47 6.66-3.47-.75-5.47-3.16-5.47-6.65V8.4c2.04-.2 3.94-.98 5.47-2.2Z"
         fill="currentColor"
-        fillOpacity="0.16"
+        fillOpacity="0.15"
       />
     </svg>
   );

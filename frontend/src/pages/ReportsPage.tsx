@@ -5,6 +5,9 @@ import type { Loan } from "../types/api";
 import { PageSection, Surface } from "../components/layout";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
+import { Select } from "../components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
+import { formatDateTime, formatEnumLabel } from "../lib/format";
 
 type ExportHistory = {
   id: number;
@@ -25,6 +28,7 @@ export function ReportsPage() {
   const [to, setTo] = useState("2026-02-26");
   const [history, setHistory] = useState<ExportHistory[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -43,35 +47,54 @@ export function ReportsPage() {
     }
   }, [seedLoan]);
 
-  const url = useMemo(() => {
-    if (!selectedLoanId) return "#";
-    return dataset === "alerts" ? exportLoanAlerts(selectedLoanId) : exportLoanCovenantResults(selectedLoanId);
-  }, [dataset, selectedLoanId]);
-
-  const onExport = () => {
+  const onExport = async () => {
     if (!selectedLoanId) return;
-    setHistory((previous) => [
-      {
-        id: Date.now(),
-        timestamp: new Date().toISOString(),
-        loanId: selectedLoanId,
-        dataset,
-        from,
-        to,
-      },
-      ...previous,
-    ]);
-    window.open(url, "_blank", "noopener,noreferrer");
+    setError(null);
+    setIsExporting(true);
+    try {
+      const response =
+        dataset === "alerts"
+          ? await exportLoanAlerts(selectedLoanId)
+          : await exportLoanCovenantResults(selectedLoanId);
+
+      const blob = await response.blob();
+      const disposition = response.headers.get("content-disposition") ?? "";
+      const match = disposition.match(/filename="?([^"]+)"?/i);
+      const fallback = `${dataset}-${selectedLoanId}-${new Date().toISOString().slice(0, 10)}.csv`;
+      const filename = match?.[1] ?? fallback;
+
+      const downloadUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download = filename;
+      link.click();
+      URL.revokeObjectURL(downloadUrl);
+
+      setHistory((previous) => [
+        {
+          id: Date.now(),
+          timestamp: new Date().toISOString(),
+          loanId: selectedLoanId,
+          dataset,
+          from,
+          to,
+        },
+        ...previous,
+      ]);
+    } catch (e) {
+      setError(`Export failed: ${(e as Error).message}`);
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   return (
     <PageSection title="Reports & Export" subtitle="Operational export center with client-side history for MVP.">
       <div className="grid gap-3 xl:grid-cols-[1fr_1.2fr]">
-        <Surface className="p-4">
+        <Surface className="p-5">
           <h2 className="panel-title">Export Setup</h2>
           <div className="mt-3 space-y-3">
-            <select
-              className="input"
+            <Select
               value={selectedLoanId}
               onChange={(event) => setSelectedLoanId(Number(event.target.value))}
             >
@@ -81,7 +104,7 @@ export function ReportsPage() {
                   #{loan.id} {loan.borrowerName}
                 </option>
               ))}
-            </select>
+            </Select>
 
             <div className="grid grid-cols-2 gap-2">
               <button
@@ -109,36 +132,36 @@ export function ReportsPage() {
               <Input type="date" value={to} onChange={(event) => setTo(event.target.value)} />
             </div>
 
-            <Button className="w-full" onClick={onExport} disabled={!selectedLoanId} type="button">
-              Export
+            <Button className="w-full" onClick={() => void onExport()} disabled={!selectedLoanId || isExporting} type="button">
+              {isExporting ? "Exporting..." : "Export"}
             </Button>
           </div>
         </Surface>
 
-        <Surface className="p-4">
+        <Surface className="p-5">
           <h2 className="panel-title">Local Export History</h2>
-          <table className="table-base mt-2">
-            <thead>
-              <tr>
-                <th>When</th>
-                <th>Loan</th>
-                <th>Dataset</th>
-                <th>Range</th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table className="mt-2">
+            <TableHeader>
+              <TableRow>
+                <TableHead>When</TableHead>
+                <TableHead>Loan</TableHead>
+                <TableHead>Dataset</TableHead>
+                <TableHead>Range</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {history.map((item) => (
-                <tr key={item.id}>
-                  <td>{item.timestamp}</td>
-                  <td className="font-numeric">#{item.loanId}</td>
-                  <td>{item.dataset}</td>
-                  <td>
+                <TableRow key={item.id}>
+                  <TableCell>{formatDateTime(item.timestamp)}</TableCell>
+                  <TableCell className="font-numeric">#{item.loanId}</TableCell>
+                  <TableCell>{formatEnumLabel(item.dataset)}</TableCell>
+                  <TableCell>
                     {item.from} to {item.to}
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </Surface>
       </div>
       {error ? <p className="mt-4 text-sm text-[var(--risk-high)]">{error}</p> : null}

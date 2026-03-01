@@ -20,6 +20,22 @@
 3. `npm run dev`
 4. Open `http://localhost:5173`
 
+## Local E2E Run (Playwright)
+1. From `frontend/`, install dependencies once:
+   - `npm install`
+   - `npm run e2e:install`
+2. Run tests:
+   - `npm run e2e`
+3. Optional interactive mode:
+   - `npm run e2e:ui`
+4. Run a single domain suite:
+   - `npx playwright test tests/e2e/auth.spec.ts`
+   - `npx playwright test tests/e2e/loans.spec.ts`
+
+Notes:
+- E2E config starts backend (`mvn spring-boot:run`) and frontend (`npm run dev`) automatically.
+- Existing running servers on ports `8080` and `5173` are reused.
+
 ## Single-Container Docker Run
 1. `docker compose build`
 2. `docker compose up`

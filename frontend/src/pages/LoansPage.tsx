@@ -1,18 +1,25 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { closeLoan, createLoan, getLoans } from "../api/client";
 import type { Loan } from "../types/api";
 import { PageSection, Surface } from "../components/layout";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
+import { ConfirmDialog } from "../components/ui/confirm-dialog";
 import { Input } from "../components/ui/input";
+import { Select } from "../components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
+import { formatEnumLabel } from "../lib/format";
 
 export function LoansPage() {
+  const navigate = useNavigate();
   const [loans, setLoans] = useState<Loan[]>([]);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<"ALL" | "ACTIVE" | "CLOSED">("ALL");
   const [form, setForm] = useState({ borrowerName: "", principalAmount: "", startDate: "" });
   const [error, setError] = useState<string | null>(null);
+  const [pendingClose, setPendingClose] = useState<Loan | null>(null);
+  const [isClosing, setIsClosing] = useState(false);
 
   const loadLoans = async () => {
     try {
@@ -53,19 +60,24 @@ export function LoansPage() {
     }
   };
 
-  const handleClose = async (loanId: number) => {
+  const handleClose = async () => {
+    if (!pendingClose) return;
+    setIsClosing(true);
     try {
-      await closeLoan(loanId);
+      await closeLoan(pendingClose.id);
+      setPendingClose(null);
       await loadLoans();
     } catch (e) {
       setError((e as Error).message);
+    } finally {
+      setIsClosing(false);
     }
   };
 
   return (
     <PageSection title="Loan Directory" subtitle="Search, filter, and drill into individual loan operations.">
       <div className="grid gap-3 xl:grid-cols-[2fr_1fr]">
-        <Surface className="p-4">
+        <Surface className="p-5">
           <div className="mb-3 grid gap-2 md:grid-cols-3">
             <Input
               className="md:col-span-2"
@@ -73,54 +85,71 @@ export function LoansPage() {
               value={search}
               onChange={(event) => setSearch(event.target.value)}
             />
-            <select className="input" value={status} onChange={(event) => setStatus(event.target.value as typeof status)}>
+            <Select value={status} onChange={(event) => setStatus(event.target.value as typeof status)}>
               <option value="ALL">All Statuses</option>
-              <option value="ACTIVE">Active</option>
-              <option value="CLOSED">Closed</option>
-            </select>
+              <option value="ACTIVE">{formatEnumLabel("ACTIVE")}</option>
+              <option value="CLOSED">{formatEnumLabel("CLOSED")}</option>
+            </Select>
           </div>
 
-          <table className="table-base">
-            <thead>
-              <tr>
-                <th>Loan</th>
-                <th>Principal</th>
-                <th>Start</th>
-                <th>Status</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
+          <Table data-testid="loans-table">
+            <TableHeader>
+              <TableRow>
+                <TableHead>Loan</TableHead>
+                <TableHead>Principal</TableHead>
+                <TableHead>Start</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {filtered.map((loan) => (
-                <tr key={loan.id}>
-                  <td>
+                <TableRow
+                  key={loan.id}
+                  className="cursor-pointer"
+                  data-testid={`loan-row-${loan.id}`}
+                  onClick={() => navigate(`/app/loans/${loan.id}/overview`)}
+                >
+                  <TableCell>
                     <p className="font-semibold">{loan.borrowerName}</p>
                     <p className="font-numeric text-xs text-[var(--text-secondary)]">#{loan.id}</p>
-                  </td>
-                  <td className="font-numeric">${Number(loan.principalAmount).toLocaleString()}</td>
-                  <td>{loan.startDate}</td>
-                  <td>
-                    <Badge>{loan.status}</Badge>
-                  </td>
-                  <td className="text-right">
+                  </TableCell>
+                  <TableCell className="font-numeric">${Number(loan.principalAmount).toLocaleString()}</TableCell>
+                  <TableCell>{loan.startDate}</TableCell>
+                  <TableCell>
+                    <Badge>{formatEnumLabel(loan.status)}</Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
-                      <Link className="btn-secondary" to={`/app/loans/${loan.id}/overview`}>
-                        Open
+                      <Link
+                        className="btn-secondary"
+                        to={`/app/loans/${loan.id}/overview`}
+                        data-testid={`loan-view-${loan.id}`}
+                        onClick={(event) => event.stopPropagation()}
+                      >
+                        View
                       </Link>
                       {loan.status === "ACTIVE" ? (
-                        <Button variant="outline" onClick={() => void handleClose(loan.id)} type="button">
+                        <Button
+                          variant="outline"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setPendingClose(loan);
+                          }}
+                          type="button"
+                        >
                           Close
                         </Button>
                       ) : null}
                     </div>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </Surface>
 
-        <Surface className="p-4">
+        <Surface className="p-5">
           <h2 className="panel-title">Create Loan</h2>
           <form className="mt-3 space-y-3" onSubmit={handleCreate}>
             <Input
@@ -149,6 +178,19 @@ export function LoansPage() {
           </form>
         </Surface>
       </div>
+      <ConfirmDialog
+        open={!!pendingClose}
+        title="Close loan?"
+        description={
+          pendingClose
+            ? `You are about to close loan #${pendingClose.id} for ${pendingClose.borrowerName}. This action changes loan status immediately.`
+            : ""
+        }
+        confirmLabel="Confirm Close"
+        isLoading={isClosing}
+        onCancel={() => setPendingClose(null)}
+        onConfirm={() => void handleClose()}
+      />
       {error ? <p className="mt-4 text-sm text-[var(--risk-high)]">{error}</p> : null}
     </PageSection>
   );

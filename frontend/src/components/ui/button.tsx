@@ -13,11 +13,11 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         ref={ref}
         className={cn(
-          "inline-flex items-center justify-center gap-2 rounded-sm px-4 py-2 text-sm font-medium transition disabled:pointer-events-none disabled:opacity-50",
+          "inline-flex items-center justify-center gap-2 rounded-md px-4 text-sm font-semibold transition-[background,border,color,filter] duration-150 disabled:pointer-events-none disabled:opacity-50",
           variant === "default" && "btn-primary",
           variant === "outline" && "btn-secondary",
           variant === "ghost" &&
-            "border border-transparent bg-transparent text-[var(--text-secondary)] hover:border-[var(--border-default)] hover:text-[var(--text-primary)]",
+            "h-10 rounded-md border border-transparent bg-transparent text-[var(--text-secondary)] hover:border-[var(--border-default)] hover:bg-[var(--bg-surface-2)] hover:text-[var(--text-primary)]",
           className
         )}
         {...props}

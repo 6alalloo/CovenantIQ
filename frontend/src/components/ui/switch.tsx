@@ -13,7 +13,7 @@ export function Switch({ checked, onCheckedChange, className }: SwitchProps) {
       type="button"
       role="switch"
       aria-checked={checked}
-      className={cn("switch", className)}
+      className={cn("switch focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]", className)}
       data-on={checked}
       onClick={() => onCheckedChange(!checked)}
     />

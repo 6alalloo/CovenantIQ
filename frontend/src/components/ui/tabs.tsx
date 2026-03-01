@@ -27,17 +27,19 @@ export function Tabs({
 }
 
 export function TabsList({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("flex flex-wrap gap-2", className)} {...props} />;
+  return (
+    <div className={cn("flex flex-wrap gap-2 border-b border-[var(--border-default)] pb-3", className)} {...props} />
+  );
 }
 
 export function TabsTrigger({
   value,
   className,
   children,
-}: {
+  onClick,
+  ...props
+}: React.ButtonHTMLAttributes<HTMLButtonElement> & {
   value: string;
-  className?: string;
-  children: React.ReactNode;
 }) {
   const context = React.useContext(TabsContext);
   if (!context) return null;
@@ -47,7 +49,11 @@ export function TabsTrigger({
       type="button"
       className={cn("seg-btn", className)}
       data-active={active}
-      onClick={() => context.onValueChange(value)}
+      onClick={(event) => {
+        onClick?.(event);
+        context.onValueChange(value);
+      }}
+      {...props}
     >
       {children}
     </button>

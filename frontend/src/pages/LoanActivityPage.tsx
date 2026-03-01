@@ -4,6 +4,7 @@ import { getLoanActivity } from "../api/client";
 import type { ActivityLog } from "../types/api";
 import { Surface } from "../components/layout";
 import { Badge } from "../components/ui/badge";
+import { formatDateTime, formatEnumLabel } from "../lib/format";
 
 export function LoanActivityPage() {
   const { loanId } = useParams();
@@ -23,7 +24,7 @@ export function LoanActivityPage() {
   }, [numericLoanId]);
 
   return (
-    <Surface className="p-4">
+    <Surface className="p-5">
       <h2 className="panel-title">Loan Activity Trail</h2>
       <table className="table-base mt-3">
         <thead>
@@ -37,8 +38,8 @@ export function LoanActivityPage() {
         <tbody>
           {rows.map((row) => (
             <tr key={row.id}>
-              <td>{row.timestampUtc}</td>
-              <td><Badge>{row.eventType}</Badge></td>
+              <td>{formatDateTime(row.timestampUtc)}</td>
+              <td><Badge>{formatEnumLabel(row.eventType)}</Badge></td>
               <td>{row.username}</td>
               <td>{row.description}</td>
             </tr>
