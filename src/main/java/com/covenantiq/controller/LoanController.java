@@ -4,6 +4,7 @@ import com.covenantiq.dto.request.CreateCovenantRequest;
 import com.covenantiq.dto.request.CreateCommentRequest;
 import com.covenantiq.dto.request.CreateLoanRequest;
 import com.covenantiq.dto.request.SubmitFinancialStatementRequest;
+import com.covenantiq.dto.request.UpdateCovenantRequest;
 import com.covenantiq.dto.response.AlertResponse;
 import com.covenantiq.dto.response.BulkImportSummaryResponse;
 import com.covenantiq.dto.response.CommentResponse;
@@ -40,6 +41,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/loans")
@@ -104,6 +107,24 @@ public class LoanController {
     @PreAuthorize("hasAnyRole('ANALYST','ADMIN')")
     public CovenantResponse addCovenant(@PathVariable Long loanId, @Valid @RequestBody CreateCovenantRequest request) {
         return ResponseMapper.toCovenantResponse(covenantService.createCovenant(loanId, request));
+    }
+
+    @PatchMapping("/{loanId}/covenants/{covenantId}")
+    @PreAuthorize("hasAnyRole('ANALYST','ADMIN')")
+    public CovenantResponse updateCovenant(
+            @PathVariable Long loanId,
+            @PathVariable Long covenantId,
+            @Valid @RequestBody UpdateCovenantRequest request
+    ) {
+        return ResponseMapper.toCovenantResponse(covenantService.updateCovenant(loanId, covenantId, request));
+    }
+
+    @GetMapping("/{loanId}/covenants")
+    @PreAuthorize("hasAnyRole('ANALYST','RISK_LEAD','ADMIN')")
+    public List<CovenantResponse> getCovenants(@PathVariable Long loanId) {
+        return covenantService.getLoanCovenants(loanId).stream()
+                .map(ResponseMapper::toCovenantResponse)
+                .toList();
     }
 
     @PostMapping("/{loanId}/financial-statements")

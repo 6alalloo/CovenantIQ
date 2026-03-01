@@ -44,7 +44,7 @@ test("E2E-041 overview loads borrower snapshot and covenant list", async ({ page
 
 test("E2E-042 add covenant succeeds", async ({ page }) => {
   await openLoanTab(page, "overview");
-  await page.locator("select").first().selectOption("DEBT_TO_EQUITY");
+  await page.getByRole("button", { name: /Debt to Equity/i }).click();
   await page.getByPlaceholder("Threshold value").fill("1.11");
   const createResponse = page.waitForResponse((response) =>
     response.url().includes("/api/v1/loans/") &&
@@ -53,7 +53,23 @@ test("E2E-042 add covenant succeeds", async ({ page }) => {
   );
   await page.getByRole("button", { name: "Save Covenant" }).click();
   await expect((await createResponse).ok()).toBeTruthy();
-  await expect(page.getByPlaceholder("Threshold value")).toHaveValue("");
+  const debtToEquityRow = page.locator("tr", { hasText: "Debt to Equity" }).first();
+  await expect(debtToEquityRow.locator("td").nth(2)).toHaveText("1.11");
+});
+
+test("E2E-043 edit existing covenant rule succeeds", async ({ page }) => {
+  await openLoanTab(page, "overview");
+  const row = page.locator("tr", { hasText: "Current Ratio" }).first();
+  await row.getByRole("button", { name: "Edit" }).click();
+
+  await page.getByPlaceholder("Threshold value").fill("1.35");
+  const updateResponse = page.waitForResponse(
+    (response) => response.url().includes("/covenants/") && response.request().method() === "PATCH"
+  );
+  await page.getByRole("button", { name: "Save Changes" }).click();
+  await expect((await updateResponse).ok()).toBeTruthy();
+  const updatedRow = page.locator("tr", { hasText: "Current Ratio" }).first();
+  await expect(updatedRow.locator("td").nth(2)).toHaveText("1.35");
 });
 
 test("E2E-060 statements tab loads history and submits statement", async ({ page }) => {

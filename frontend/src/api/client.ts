@@ -209,6 +209,21 @@ export function addCovenant(
   });
 }
 
+export function getCovenants(loanId: number) {
+  return request<Covenant[]>(`/loans/${loanId}/covenants`);
+}
+
+export function updateCovenant(
+  loanId: number,
+  covenantId: number,
+  payload: { thresholdValue: number; comparisonType: string; severityLevel: string }
+) {
+  return request<Covenant>(`/loans/${loanId}/covenants/${covenantId}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
 export function getCovenantResults(loanId: number, page = 0, size = 20) {
   return request<PageResponse<CovenantResult>>(
     `/loans/${loanId}/covenant-results${makeQuery({ page, size, sort: "id,desc" })}`

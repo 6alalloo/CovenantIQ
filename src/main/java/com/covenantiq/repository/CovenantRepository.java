@@ -11,4 +11,6 @@ public interface CovenantRepository extends JpaRepository<Covenant, Long> {
     List<Covenant> findByLoanIdOrderByIdAsc(Long loanId);
 
     Optional<Covenant> findByLoanIdAndType(Long loanId, CovenantType type);
+
+    Optional<Covenant> findByIdAndLoanId(Long id, Long loanId);
 }

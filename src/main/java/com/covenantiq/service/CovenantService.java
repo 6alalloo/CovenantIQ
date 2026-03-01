@@ -3,8 +3,10 @@ package com.covenantiq.service;
 import com.covenantiq.domain.Covenant;
 import com.covenantiq.domain.Loan;
 import com.covenantiq.dto.request.CreateCovenantRequest;
+import com.covenantiq.dto.request.UpdateCovenantRequest;
 import com.covenantiq.enums.ActivityEventType;
 import com.covenantiq.exception.ConflictException;
+import com.covenantiq.exception.ResourceNotFoundException;
 import com.covenantiq.repository.CovenantRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -57,5 +59,30 @@ public class CovenantService {
     @Transactional(readOnly = true)
     public List<Covenant> getLoanCovenants(Long loanId) {
         return covenantRepository.findByLoanIdOrderByIdAsc(loanId);
+    }
+
+    @Transactional
+    public Covenant updateCovenant(Long loanId, Long covenantId, UpdateCovenantRequest request) {
+        Loan loan = loanService.getLoan(loanId);
+        loanService.ensureActive(loan);
+
+        Covenant covenant = covenantRepository.findByIdAndLoanId(covenantId, loanId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Covenant " + covenantId + " not found for loan " + loanId
+                ));
+
+        covenant.setThresholdValue(request.thresholdValue());
+        covenant.setComparisonType(request.comparisonType());
+        covenant.setSeverityLevel(request.severityLevel());
+
+        Covenant saved = covenantRepository.save(covenant);
+        activityLogService.logEvent(
+                ActivityEventType.COVENANT_UPDATED,
+                "Covenant",
+                saved.getId(),
+                loanId,
+                "Covenant " + saved.getType() + " updated"
+        );
+        return saved;
     }
 }
