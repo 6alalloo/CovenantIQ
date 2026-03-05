@@ -7,6 +7,7 @@ const TABS = [
   { key: "statements", label: "Statements", icon: "Fx"},
   { key: "results", label: "Results", icon: "~"},
   { key: "alerts", label: "Alerts", icon: "!"},
+  { key: "collateral", label: "Collateral", icon: "$"},
   { key: "documents", label: "Documents", icon: "D"},
   { key: "comments", label: "Comments", icon: "C"},
   { key: "activity", label: "Activity", icon: "A"},

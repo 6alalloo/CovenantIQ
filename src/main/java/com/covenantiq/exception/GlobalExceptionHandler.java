@@ -23,7 +23,7 @@ public class GlobalExceptionHandler {
         ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
         pd.setTitle("Resource Not Found");
         pd.setInstance(URI.create(request.getRequestURI()));
-        addMeta(pd);
+        addMeta(pd, "resource_not_found");
         return pd;
     }
 
@@ -32,7 +32,7 @@ public class GlobalExceptionHandler {
         ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
         pd.setTitle("Conflict");
         pd.setInstance(URI.create(request.getRequestURI()));
-        addMeta(pd);
+        addMeta(pd, "conflict");
         return pd;
     }
 
@@ -41,7 +41,7 @@ public class GlobalExceptionHandler {
         ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage());
         pd.setTitle("Unprocessable Entity");
         pd.setInstance(URI.create(request.getRequestURI()));
-        addMeta(pd);
+        addMeta(pd, "unprocessable_entity");
         return pd;
     }
 
@@ -54,7 +54,7 @@ public class GlobalExceptionHandler {
         Map<String, String> fieldErrors = new HashMap<>();
         ex.getBindingResult().getFieldErrors().forEach(err -> fieldErrors.put(err.getField(), err.getDefaultMessage()));
         pd.setProperty("errors", fieldErrors);
-        addMeta(pd);
+        addMeta(pd, "validation_error");
         return pd;
     }
 
@@ -63,7 +63,7 @@ public class GlobalExceptionHandler {
         ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage());
         pd.setTitle("Validation Error");
         pd.setInstance(URI.create(request.getRequestURI()));
-        addMeta(pd);
+        addMeta(pd, "validation_error");
         return pd;
     }
 
@@ -72,7 +72,7 @@ public class GlobalExceptionHandler {
         ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
         pd.setTitle("Authentication Failed");
         pd.setInstance(URI.create(request.getRequestURI()));
-        addMeta(pd);
+        addMeta(pd, "authentication_failed");
         return pd;
     }
 
@@ -81,7 +81,7 @@ public class GlobalExceptionHandler {
         ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, ex.getMessage());
         pd.setTitle("Forbidden");
         pd.setInstance(URI.create(request.getRequestURI()));
-        addMeta(pd);
+        addMeta(pd, "forbidden_operation");
         return pd;
     }
 
@@ -93,7 +93,7 @@ public class GlobalExceptionHandler {
         );
         pd.setTitle("Forbidden");
         pd.setInstance(URI.create(request.getRequestURI()));
-        addMeta(pd);
+        addMeta(pd, "access_denied");
         return pd;
     }
 
@@ -102,7 +102,7 @@ public class GlobalExceptionHandler {
         ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR, "Unexpected server error");
         pd.setTitle("Internal Server Error");
         pd.setInstance(URI.create(request.getRequestURI()));
-        addMeta(pd);
+        addMeta(pd, "internal_server_error");
         return pd;
     }
 
@@ -111,7 +111,7 @@ public class GlobalExceptionHandler {
         ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.PAYLOAD_TOO_LARGE, ex.getMessage());
         pd.setTitle("Payload Too Large");
         pd.setInstance(URI.create(request.getRequestURI()));
-        addMeta(pd);
+        addMeta(pd, "payload_too_large");
         return pd;
     }
 
@@ -120,12 +120,25 @@ public class GlobalExceptionHandler {
         ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.UNSUPPORTED_MEDIA_TYPE, ex.getMessage());
         pd.setTitle("Unsupported Media Type");
         pd.setInstance(URI.create(request.getRequestURI()));
-        addMeta(pd);
+        addMeta(pd, "unsupported_media_type");
         return pd;
     }
 
-    private void addMeta(ProblemDetail problemDetail) {
+    @ExceptionHandler(WorkflowTransitionConflictException.class)
+    public ProblemDetail handleWorkflowTransitionConflict(WorkflowTransitionConflictException ex, HttpServletRequest request) {
+        boolean roleDenied = ex.getDiagnostics() != null && ex.getDiagnostics().containsKey("requiredRoles");
+        HttpStatus status = roleDenied ? HttpStatus.FORBIDDEN : HttpStatus.CONFLICT;
+        ProblemDetail pd = ProblemDetail.forStatusAndDetail(status, ex.getMessage());
+        pd.setTitle(roleDenied ? "Forbidden" : "Workflow Transition Conflict");
+        pd.setInstance(URI.create(request.getRequestURI()));
+        pd.setProperty("diagnostics", ex.getDiagnostics());
+        addMeta(pd, roleDenied ? "access_denied" : "workflow_transition_conflict");
+        return pd;
+    }
+
+    private void addMeta(ProblemDetail problemDetail, String code) {
         problemDetail.setProperty("timestamp", java.time.OffsetDateTime.now().toString());
+        problemDetail.setProperty("code", code);
         String correlationId = MDC.get("correlationId");
         if (correlationId != null) {
             problemDetail.setProperty("correlationId", correlationId);

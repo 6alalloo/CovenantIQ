@@ -19,15 +19,18 @@ public class CovenantService {
     private final CovenantRepository covenantRepository;
     private final LoanService loanService;
     private final ActivityLogService activityLogService;
+    private final OutboxEventPublisher outboxEventPublisher;
 
     public CovenantService(
             CovenantRepository covenantRepository,
             LoanService loanService,
-            ActivityLogService activityLogService
+            ActivityLogService activityLogService,
+            OutboxEventPublisher outboxEventPublisher
     ) {
         this.covenantRepository = covenantRepository;
         this.loanService = loanService;
         this.activityLogService = activityLogService;
+        this.outboxEventPublisher = outboxEventPublisher;
     }
 
     @Transactional
@@ -53,6 +56,12 @@ public class CovenantService {
                 loanId,
                 "Covenant " + saved.getType() + " created"
         );
+        outboxEventPublisher.publish("Covenant", saved.getId(), "CovenantCreated", java.util.Map.of(
+                "loanId", loanId,
+                "covenantId", saved.getId(),
+                "type", saved.getType().name(),
+                "severity", saved.getSeverityLevel().name()
+        ));
         return saved;
     }
 
@@ -83,6 +92,12 @@ public class CovenantService {
                 loanId,
                 "Covenant " + saved.getType() + " updated"
         );
+        outboxEventPublisher.publish("Covenant", saved.getId(), "CovenantUpdated", java.util.Map.of(
+                "loanId", loanId,
+                "covenantId", saved.getId(),
+                "type", saved.getType().name(),
+                "severity", saved.getSeverityLevel().name()
+        ));
         return saved;
     }
 }

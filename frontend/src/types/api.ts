@@ -195,6 +195,7 @@ export type ProblemDetails = {
   detail?: string;
   instance?: string;
   correlationId?: string;
+  code?: string;
 };
 
 export type PageResponse<T> = {
@@ -203,4 +204,156 @@ export type PageResponse<T> = {
   totalElements: number;
   number: number;
   size: number;
+};
+
+export type WebhookSubscription = {
+  id: number;
+  name: string;
+  endpointUrl: string;
+  eventFilters: string[];
+  active: boolean;
+  createdBy: string;
+  createdAt: string;
+};
+
+export type WebhookDelivery = {
+  id: number;
+  eventOutboxId: number;
+  eventId: string;
+  subscriptionId: number;
+  attemptNo: number;
+  responseStatus: number | null;
+  responseBodyHash: string | null;
+  latencyMs: number | null;
+  deliveryStatus: "SUCCESS" | "FAILED";
+  errorCode: string | null;
+  attemptedAt: string;
+};
+
+export type WorkflowDefinition = {
+  id: number;
+  entityType: string;
+  name: string;
+  version: number;
+  status: "DRAFT" | "PUBLISHED" | "RETIRED";
+  createdBy: string;
+  createdAt: string;
+  states: Array<{ stateCode: string; initial: boolean; terminal: boolean }>;
+  transitions: Array<{ fromState: string; toState: string; allowedRoles: string[]; requiredFields: string[] }>;
+};
+
+export type WorkflowInstance = {
+  id: number;
+  entityType: string;
+  entityId: number;
+  workflowDefinitionId: number;
+  currentState: string;
+  startedAt: string;
+  updatedAt: string;
+  transitionLog: Array<{
+    id: number;
+    fromState: string;
+    toState: string;
+    actor: string;
+    reason: string;
+    metadataJson: string;
+    timestampUtc: string;
+  }>;
+};
+
+export type Ruleset = {
+  id: number;
+  key: string;
+  name: string;
+  domain: "COVENANT_EVAL";
+  ownerRole: string;
+  createdBy: string;
+  createdAt: string;
+};
+
+export type RulesetVersion = {
+  id: number;
+  rulesetId: number;
+  version: number;
+  status: "DRAFT" | "VALIDATED" | "PUBLISHED" | "ARCHIVED";
+  definitionJson: string;
+  schemaVersion: number;
+  changeSummary: string | null;
+  createdBy: string;
+  approvedBy: string | null;
+  publishedAt: string | null;
+  createdAt: string;
+};
+
+export type RulesetValidationResult = {
+  rulesetVersionId: number;
+  valid: boolean;
+  pass: boolean;
+  actualOutput: Record<string, unknown>;
+  message: string;
+};
+
+export type CollateralAsset = {
+  id: number;
+  loanId: number;
+  assetType: string;
+  description: string | null;
+  nominalValue: string;
+  haircutPct: string;
+  netEligibleValue: string;
+  lienRank: number;
+  currency: string;
+  effectiveDate: string;
+  createdAt: string;
+};
+
+export type CovenantException = {
+  id: number;
+  loanId: number;
+  covenantId: number;
+  exceptionType: "WAIVER" | "OVERRIDE";
+  reason: string;
+  effectiveFrom: string;
+  effectiveTo: string;
+  status: "REQUESTED" | "APPROVED" | "EXPIRED" | "REJECTED";
+  requestedBy: string;
+  approvedBy: string | null;
+  approvedAt: string | null;
+  controlsJson: string;
+  createdAt: string;
+};
+
+export type ChangeRequest = {
+  id: number;
+  type: "RULESET" | "WORKFLOW" | "INTEGRATION_CONFIG";
+  status: "DRAFT" | "SUBMITTED" | "APPROVED" | "REJECTED" | "RELEASED" | "ROLLED_BACK";
+  requestedBy: string;
+  requestedAt: string;
+  approvedBy: string | null;
+  approvedAt: string | null;
+  justification: string;
+  items: Array<{
+    id: number;
+    artifactType: string;
+    artifactId: number;
+    fromVersion: string | null;
+    toVersion: string | null;
+    diffJson: string;
+  }>;
+};
+
+export type ReleaseBatch = {
+  id: number;
+  changeRequestId: number;
+  releaseTag: string;
+  releasedBy: string;
+  releasedAt: string;
+  rollbackOfReleaseId: number | null;
+  audits: Array<{
+    id: number;
+    action: string;
+    actor: string;
+    detailsJson: string;
+    timestampUtc: string;
+  }>;
 };

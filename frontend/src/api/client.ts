@@ -5,18 +5,29 @@ import type {
   AttachmentMetadata,
   AuthSession,
   BulkImportSummary,
+  ChangeRequest,
   CommentResponse,
+  CollateralAsset,
   Covenant,
+  CovenantException,
   CovenantResult,
   FinancialStatement,
   Loan,
   PageResponse,
   PortfolioSummary,
   ProblemDetails,
+  ReleaseBatch,
   RiskDetails,
   RiskSummary,
+  Ruleset,
+  RulesetValidationResult,
+  RulesetVersion,
   UserResponse,
   UserRole,
+  WebhookDelivery,
+  WebhookSubscription,
+  WorkflowDefinition,
+  WorkflowInstance,
 } from "../types/api";
 
 const BASE = "/api/v1";
@@ -374,4 +385,203 @@ export function exportLoanAlerts(loanId: number) {
 
 export function exportLoanCovenantResults(loanId: number) {
   return requestRaw(`/loans/${loanId}/covenant-results/export`);
+}
+
+export function createWebhookSubscription(payload: {
+  name: string;
+  endpointUrl: string;
+  secret: string;
+  eventFilters: string[];
+}) {
+  return request<WebhookSubscription>("/integrations/webhooks", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function getWebhookSubscriptions() {
+  return request<WebhookSubscription[]>("/integrations/webhooks");
+}
+
+export function updateWebhookSubscription(
+  id: number,
+  payload: Partial<{ name: string; endpointUrl: string; secret: string; eventFilters: string[]; active: boolean }>
+) {
+  return request<WebhookSubscription>(`/integrations/webhooks/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function getWebhookDeliveries(id: number) {
+  return request<WebhookDelivery[]>(`/integrations/webhooks/${id}/deliveries`);
+}
+
+export function retryWebhookOutboxEvent(eventOutboxId: number) {
+  return request<void>(`/integrations/webhooks/deliveries/${eventOutboxId}/retry`, { method: "POST" });
+}
+
+export function createWorkflowDefinition(payload: {
+  entityType: string;
+  name: string;
+  states: Array<{ stateCode: string; initial: boolean; terminal: boolean }>;
+  transitions: Array<{
+    fromState: string;
+    toState: string;
+    allowedRoles: string[];
+    requiredFields: string[];
+    guardExpression?: string;
+  }>;
+}) {
+  return request<WorkflowDefinition>("/workflows/definitions", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function getWorkflowDefinitions(entityType?: string) {
+  return request<WorkflowDefinition[]>(`/workflows/definitions${makeQuery({ entityType })}`);
+}
+
+export function publishWorkflowDefinition(id: number, reason: string) {
+  return request<WorkflowDefinition>(`/workflows/definitions/${id}/publish`, {
+    method: "POST",
+    body: JSON.stringify({ reason }),
+  });
+}
+
+export function getWorkflowInstance(entityType: string, entityId: number) {
+  return request<WorkflowInstance>(`/workflows/instances/${entityType}/${entityId}`);
+}
+
+export function transitionWorkflowInstance(id: number, toState: string, reason: string, metadata?: Record<string, unknown>) {
+  return request<WorkflowInstance>(`/workflows/instances/${id}/transition`, {
+    method: "POST",
+    body: JSON.stringify({ toState, reason, metadata: metadata ?? {} }),
+  });
+}
+
+export function createRuleset(payload: { key: string; name: string; domain: "COVENANT_EVAL"; ownerRole: string }) {
+  return request<Ruleset>("/rulesets", { method: "POST", body: JSON.stringify(payload) });
+}
+
+export function getRulesets() {
+  return request<Ruleset[]>("/rulesets");
+}
+
+export function createRulesetVersion(
+  rulesetId: number,
+  payload: { definitionJson: string; schemaVersion: number; changeSummary?: string }
+) {
+  return request<RulesetVersion>(`/rulesets/${rulesetId}/versions`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function validateRulesetVersion(
+  rulesetId: number,
+  version: number,
+  payload: { input?: Record<string, unknown>; expectedOutput?: Record<string, unknown> } = {}
+) {
+  return request<RulesetValidationResult>(`/rulesets/${rulesetId}/versions/${version}/validate`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function publishRulesetVersion(rulesetId: number, version: number, reason: string) {
+  return request<RulesetVersion>(`/rulesets/${rulesetId}/versions/${version}/publish`, {
+    method: "POST",
+    body: JSON.stringify({ reason }),
+  });
+}
+
+export function getRulesetVersions(rulesetId: number) {
+  return request<RulesetVersion[]>(`/rulesets/${rulesetId}/versions`);
+}
+
+export function createCollateral(
+  loanId: number,
+  payload: {
+    assetType: string;
+    description?: string;
+    nominalValue: number;
+    haircutPct: number;
+    lienRank: number;
+    currency: string;
+    effectiveDate: string;
+  }
+) {
+  return request<CollateralAsset>(`/loans/${loanId}/collaterals`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function getCollaterals(loanId: number) {
+  return request<CollateralAsset[]>(`/loans/${loanId}/collaterals`);
+}
+
+export function createCovenantException(
+  loanId: number,
+  payload: {
+    covenantId: number;
+    exceptionType: "WAIVER" | "OVERRIDE";
+    reason: string;
+    effectiveFrom: string;
+    effectiveTo: string;
+    controlsJson?: string;
+  }
+) {
+  return request<CovenantException>(`/loans/${loanId}/exceptions`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function getCovenantExceptions(loanId: number) {
+  return request<CovenantException[]>(`/loans/${loanId}/exceptions`);
+}
+
+export function approveException(id: number) {
+  return request<CovenantException>(`/exceptions/${id}/approve`, { method: "PATCH" });
+}
+
+export function expireException(id: number) {
+  return request<CovenantException>(`/exceptions/${id}/expire`, { method: "PATCH" });
+}
+
+export function createChangeRequest(payload: {
+  type: "RULESET" | "WORKFLOW" | "INTEGRATION_CONFIG";
+  justification: string;
+  items: Array<{
+    artifactType: string;
+    artifactId: number;
+    fromVersion?: string;
+    toVersion?: string;
+    diffJson: string;
+  }>;
+}) {
+  return request<ChangeRequest>("/change-requests", { method: "POST", body: JSON.stringify(payload) });
+}
+
+export function approveChangeRequest(id: number) {
+  return request<ChangeRequest>(`/change-requests/${id}/approve`, { method: "PATCH" });
+}
+
+export function getChangeRequests() {
+  return request<ChangeRequest[]>("/change-requests");
+}
+
+export function createRelease(payload: { changeRequestId: number; releaseTag: string }) {
+  return request<ReleaseBatch>("/releases", { method: "POST", body: JSON.stringify(payload) });
+}
+
+export function rollbackRelease(id: number, payload: { targetReleaseId: number; justification: string }) {
+  return request<ReleaseBatch>(`/releases/${id}/rollback`, { method: "POST", body: JSON.stringify(payload) });
+}
+
+export function getReleases() {
+  return request<ReleaseBatch[]>("/releases");
 }

@@ -17,10 +17,16 @@ public class LoanService {
 
     private final LoanRepository loanRepository;
     private final ActivityLogService activityLogService;
+    private final OutboxEventPublisher outboxEventPublisher;
 
-    public LoanService(LoanRepository loanRepository, ActivityLogService activityLogService) {
+    public LoanService(
+            LoanRepository loanRepository,
+            ActivityLogService activityLogService,
+            OutboxEventPublisher outboxEventPublisher
+    ) {
         this.loanRepository = loanRepository;
         this.activityLogService = activityLogService;
+        this.outboxEventPublisher = outboxEventPublisher;
     }
 
     @Transactional
@@ -38,6 +44,11 @@ public class LoanService {
                 saved.getId(),
                 "Loan created for borrower " + saved.getBorrowerName()
         );
+        outboxEventPublisher.publish("Loan", saved.getId(), "LoanCreated", java.util.Map.of(
+                "loanId", saved.getId(),
+                "borrowerName", saved.getBorrowerName(),
+                "status", saved.getStatus().name()
+        ));
         return saved;
     }
 
@@ -67,6 +78,10 @@ public class LoanService {
                 saved.getId(),
                 "Loan closed"
         );
+        outboxEventPublisher.publish("Loan", saved.getId(), "LoanClosed", java.util.Map.of(
+                "loanId", saved.getId(),
+                "status", saved.getStatus().name()
+        ));
         return saved;
     }
 

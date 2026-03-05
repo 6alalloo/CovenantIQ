@@ -8,7 +8,6 @@ import com.covenantiq.enums.AlertStatus;
 import com.covenantiq.enums.AlertType;
 import com.covenantiq.enums.SeverityLevel;
 import com.covenantiq.exception.ConflictException;
-import com.covenantiq.exception.ForbiddenOperationException;
 import com.covenantiq.exception.ResourceNotFoundException;
 import com.covenantiq.exception.UnprocessableEntityException;
 import com.covenantiq.repository.AlertRepository;
@@ -29,15 +28,21 @@ public class AlertService {
     private final AlertRepository alertRepository;
     private final CurrentUserService currentUserService;
     private final ActivityLogService activityLogService;
+    private final OutboxEventPublisher outboxEventPublisher;
+    private final WorkflowService workflowService;
 
     public AlertService(
             AlertRepository alertRepository,
             CurrentUserService currentUserService,
-            ActivityLogService activityLogService
+            ActivityLogService activityLogService,
+            OutboxEventPublisher outboxEventPublisher,
+            WorkflowService workflowService
     ) {
         this.alertRepository = alertRepository;
         this.currentUserService = currentUserService;
         this.activityLogService = activityLogService;
+        this.outboxEventPublisher = outboxEventPublisher;
+        this.workflowService = workflowService;
     }
 
     @Transactional
@@ -57,7 +62,17 @@ public class AlertService {
         alert.setSeverityLevel(severityLevel);
         alert.setAlertRuleCode(alertRuleCode);
         alert.setTriggeredTimestampUtc(OffsetDateTime.now(ZoneOffset.UTC));
-        return alertRepository.save(alert);
+        Alert saved = alertRepository.save(alert);
+        workflowService.ensureInstanceForAlert(saved);
+        outboxEventPublisher.publish("Alert", saved.getId(), "AlertCreated", java.util.Map.of(
+                "alertId", saved.getId(),
+                "loanId", loan.getId(),
+                "status", saved.getStatus().name(),
+                "severity", saved.getSeverityLevel().name(),
+                "alertType", saved.getAlertType().name(),
+                "eventTime", saved.getTriggeredTimestampUtc().toString()
+        ));
+        return saved;
     }
 
     @Transactional
@@ -67,9 +82,22 @@ public class AlertService {
         if (alert.isSuperseded()) {
             throw new ConflictException("Cannot update superseded alert");
         }
-        validateTransition(alert.getStatus(), targetStatus);
-        enforceRoleForTargetStatus(targetStatus);
+        if (alert.getStatus() == targetStatus) {
+            return alert;
+        }
         AlertStatus previousStatus = alert.getStatus();
+
+        if (targetStatus == AlertStatus.RESOLVED && (resolutionNotes == null || resolutionNotes.isBlank())) {
+            throw new UnprocessableEntityException("resolutionNotes is required when resolving an alert");
+        }
+
+        workflowService.transition(
+                workflowService.ensureInstanceForAlert(alert),
+                targetStatus.name(),
+                "Alert status transition",
+                java.util.Map.of("resolutionNotes", resolutionNotes == null ? "" : resolutionNotes),
+                java.util.Map.of("resolutionNotes", resolutionNotes == null ? "" : resolutionNotes)
+        );
 
         OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
         String username = currentUserService.usernameOrSystem();
@@ -79,9 +107,6 @@ public class AlertService {
                 alert.setAcknowledgedAt(now);
             }
             case RESOLVED -> {
-                if (resolutionNotes == null || resolutionNotes.isBlank()) {
-                    throw new UnprocessableEntityException("resolutionNotes is required when resolving an alert");
-                }
                 alert.setResolvedBy(username);
                 alert.setResolvedAt(now);
                 alert.setResolutionNotes(resolutionNotes.trim());
@@ -94,6 +119,14 @@ public class AlertService {
         Alert saved = alertRepository.save(alert);
         log.info("Alert status updated: alertId={}, from={}, to={}, by={}",
                 alertId, previousStatus, targetStatus, username);
+        outboxEventPublisher.publish("Alert", saved.getId(), "AlertStatusChanged", java.util.Map.of(
+                "alertId", saved.getId(),
+                "loanId", saved.getLoan().getId(),
+                "fromStatus", previousStatus.name(),
+                "toStatus", targetStatus.name(),
+                "actor", username,
+                "severity", saved.getSeverityLevel() == null ? "UNKNOWN" : saved.getSeverityLevel().name()
+        ));
         if (targetStatus == AlertStatus.ACKNOWLEDGED) {
             activityLogService.logEvent(
                     ActivityEventType.ALERT_ACKNOWLEDGED,
@@ -114,32 +147,4 @@ public class AlertService {
         return saved;
     }
 
-    private void validateTransition(AlertStatus current, AlertStatus target) {
-        if (current == AlertStatus.RESOLVED && target != AlertStatus.RESOLVED) {
-            throw new ConflictException("Cannot transition from RESOLVED to " + target);
-        }
-        if (current == target) {
-            return;
-        }
-        if (current == AlertStatus.OPEN && (target == AlertStatus.UNDER_REVIEW || target == AlertStatus.RESOLVED)) {
-            throw new ConflictException("OPEN alerts must be acknowledged before review or resolution");
-        }
-        if (target == AlertStatus.OPEN && current != AlertStatus.OPEN) {
-            throw new ConflictException("Cannot transition back to OPEN");
-        }
-        if (current == AlertStatus.ACKNOWLEDGED && target == AlertStatus.OPEN) {
-            throw new ConflictException("Cannot transition from ACKNOWLEDGED to OPEN");
-        }
-    }
-
-    private void enforceRoleForTargetStatus(AlertStatus targetStatus) {
-        if (targetStatus == AlertStatus.ACKNOWLEDGED && !(currentUserService.hasRole("ANALYST")
-                || currentUserService.hasRole("ADMIN"))) {
-            throw new ForbiddenOperationException("Only ANALYST or ADMIN can acknowledge alerts");
-        }
-        if ((targetStatus == AlertStatus.UNDER_REVIEW || targetStatus == AlertStatus.RESOLVED)
-                && !(currentUserService.hasRole("RISK_LEAD") || currentUserService.hasRole("ADMIN"))) {
-            throw new ForbiddenOperationException("Only RISK_LEAD or ADMIN can review/resolve alerts");
-        }
-    }
 }

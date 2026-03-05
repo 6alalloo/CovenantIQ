@@ -36,10 +36,16 @@ public class BulkImportService {
 
     private final LoanService loanService;
     private final FinancialStatementService financialStatementService;
+    private final OutboxEventPublisher outboxEventPublisher;
 
-    public BulkImportService(LoanService loanService, FinancialStatementService financialStatementService) {
+    public BulkImportService(
+            LoanService loanService,
+            FinancialStatementService financialStatementService,
+            OutboxEventPublisher outboxEventPublisher
+    ) {
         this.loanService = loanService;
         this.financialStatementService = financialStatementService;
+        this.outboxEventPublisher = outboxEventPublisher;
     }
 
     @Transactional
@@ -78,7 +84,14 @@ public class BulkImportService {
             }
         }
 
-        return new BulkImportSummaryResponse(rows.size(), successCount, failureCount, results);
+        BulkImportSummaryResponse summary = new BulkImportSummaryResponse(rows.size(), successCount, failureCount, results);
+        outboxEventPublisher.publish("FinancialStatement", loanId, "FinancialStatementBulkImported", java.util.Map.of(
+                "loanId", loanId,
+                "totalRows", rows.size(),
+                "successCount", successCount,
+                "failureCount", failureCount
+        ));
+        return summary;
     }
 
     private void validateFile(MultipartFile file) {

@@ -27,6 +27,7 @@ public class FinancialStatementService {
     private final CovenantEvaluationService covenantEvaluationService;
     private final TrendAnalysisService trendAnalysisService;
     private final ActivityLogService activityLogService;
+    private final OutboxEventPublisher outboxEventPublisher;
 
     public FinancialStatementService(
             LoanService loanService,
@@ -35,7 +36,8 @@ public class FinancialStatementService {
             AlertRepository alertRepository,
             CovenantEvaluationService covenantEvaluationService,
             TrendAnalysisService trendAnalysisService,
-            ActivityLogService activityLogService
+            ActivityLogService activityLogService,
+            OutboxEventPublisher outboxEventPublisher
     ) {
         this.loanService = loanService;
         this.financialStatementRepository = financialStatementRepository;
@@ -44,6 +46,7 @@ public class FinancialStatementService {
         this.covenantEvaluationService = covenantEvaluationService;
         this.trendAnalysisService = trendAnalysisService;
         this.activityLogService = activityLogService;
+        this.outboxEventPublisher = outboxEventPublisher;
     }
 
     @Transactional
@@ -87,6 +90,13 @@ public class FinancialStatementService {
                 loanId,
                 "Statement submitted for " + request.periodType() + " " + request.fiscalYear()
         );
+        outboxEventPublisher.publish("FinancialStatement", saved.getId(), "FinancialStatementSubmitted", java.util.Map.of(
+                "loanId", loanId,
+                "statementId", saved.getId(),
+                "periodType", saved.getPeriodType().name(),
+                "fiscalYear", saved.getFiscalYear(),
+                "fiscalQuarter", saved.getFiscalQuarter() == null ? "" : saved.getFiscalQuarter().toString()
+        ));
         return saved;
     }
 
@@ -99,6 +109,10 @@ public class FinancialStatementService {
     private void supersedeStatementGraph(FinancialStatement existingStatement) {
         existingStatement.setSuperseded(true);
         financialStatementRepository.save(existingStatement);
+        outboxEventPublisher.publish("FinancialStatement", existingStatement.getId(), "FinancialStatementSuperseded", java.util.Map.of(
+                "loanId", existingStatement.getLoan().getId(),
+                "statementId", existingStatement.getId()
+        ));
 
         List<CovenantResult> existingResults = covenantResultRepository
                 .findByFinancialStatementIdAndSupersededFalse(existingStatement.getId());
@@ -106,7 +120,13 @@ public class FinancialStatementService {
         covenantResultRepository.saveAll(existingResults);
 
         List<Alert> existingAlerts = alertRepository.findByFinancialStatementIdAndSupersededFalse(existingStatement.getId());
-        existingAlerts.forEach(alert -> alert.setSuperseded(true));
+        existingAlerts.forEach(alert -> {
+            alert.setSuperseded(true);
+            outboxEventPublisher.publish("Alert", alert.getId(), "AlertSuperseded", java.util.Map.of(
+                    "loanId", alert.getLoan().getId(),
+                    "alertId", alert.getId()
+            ));
+        });
         alertRepository.saveAll(existingAlerts);
     }
 

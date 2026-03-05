@@ -38,6 +38,15 @@ class CovenantEvaluationServiceTest {
     @Mock
     private AlertService alertService;
 
+    @Mock
+    private OutboxEventPublisher outboxEventPublisher;
+
+    @Mock
+    private RulesetService rulesetService;
+
+    @Mock
+    private CollateralExceptionService collateralExceptionService;
+
     private CovenantEvaluationService covenantEvaluationService;
 
     @BeforeEach
@@ -46,8 +55,16 @@ class CovenantEvaluationServiceTest {
                 covenantRepository,
                 covenantResultRepository,
                 new FinancialRatioService(),
-                alertService
+                alertService,
+                outboxEventPublisher,
+                rulesetService,
+                collateralExceptionService
         );
+
+        when(rulesetService.evaluatePublished(any(), any())).thenReturn(
+                new RulesetService.RuleDecision(true, "BREACH", "THRESHOLD_BREACH", java.util.Map.of())
+        );
+        when(collateralExceptionService.getActiveApprovedException(any(), any())).thenReturn(java.util.Optional.empty());
     }
 
     @Test

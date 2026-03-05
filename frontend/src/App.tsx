@@ -3,10 +3,13 @@ import { AppShell } from "./components/AppShell";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AdminUsersPage } from "./pages/AdminUsersPage";
 import { AlertsPage } from "./pages/AlertsPage";
+import { ChangeControlPage } from "./pages/ChangeControlPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { ForbiddenPage } from "./pages/ForbiddenPage";
+import { IntegrationsPage } from "./pages/IntegrationsPage";
 import { LoanActivityPage } from "./pages/LoanActivityPage";
 import { LoanAlertsPage } from "./pages/LoanAlertsPage";
+import { LoanCollateralExceptionsPage } from "./pages/LoanCollateralExceptionsPage";
 import { LoanCommentsPage } from "./pages/LoanCommentsPage";
 import { LoanDetailLayoutPage } from "./pages/LoanDetailLayoutPage";
 import { LoanDocumentsPage } from "./pages/LoanDocumentsPage";
@@ -16,9 +19,11 @@ import { LoanStatementsPage } from "./pages/LoanStatementsPage";
 import { LoansPage } from "./pages/LoansPage";
 import { LoginPage } from "./pages/LoginPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
+import { PolicyStudioPage } from "./pages/PolicyStudioPage";
 import { PortfolioPage } from "./pages/PortfolioPage";
 import { ReportsPage } from "./pages/ReportsPage";
 import { SettingsPage } from "./pages/SettingsPage";
+import { WorkflowDesignerPage } from "./pages/WorkflowDesignerPage";
 
 export default function App() {
   return (
@@ -50,11 +55,23 @@ export default function App() {
           <Route path="statements" element={<LoanStatementsPage />} />
           <Route path="results" element={<LoanResultsPage />} />
           <Route path="alerts" element={<LoanAlertsPage />} />
+          <Route path="collateral" element={<LoanCollateralExceptionsPage />} />
           <Route path="documents" element={<LoanDocumentsPage />} />
           <Route path="comments" element={<LoanCommentsPage />} />
           <Route path="activity" element={<LoanActivityPage />} />
         </Route>
         <Route path="alerts" element={<AlertsPage />} />
+        <Route
+          path="integrations"
+          element={
+            <ProtectedRoute allowRoles={["ADMIN"]}>
+              <IntegrationsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="workflows" element={<WorkflowDesignerPage />} />
+        <Route path="policies" element={<PolicyStudioPage />} />
+        <Route path="change-control" element={<ChangeControlPage />} />
         <Route path="reports" element={<ReportsPage />} />
         <Route
           path="admin/users"

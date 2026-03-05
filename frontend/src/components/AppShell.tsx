@@ -8,7 +8,7 @@ type MenuItem = {
   label: string;
   to: string;
   roles: UserRole[];
-  icon: "dashboard" | "portfolio" | "loans" | "alerts" | "reports" | "users" | "settings";
+  icon: "dashboard" | "portfolio" | "loans" | "alerts" | "integrations" | "workflows" | "policies" | "change-control" | "reports" | "users" | "settings";
 };
 
 const MENU: MenuItem[] = [
@@ -16,6 +16,10 @@ const MENU: MenuItem[] = [
   { label: "Portfolio", to: "/app/portfolio", roles: ["RISK_LEAD", "ADMIN"], icon: "portfolio" },
   { label: "Loans", to: "/app/loans", roles: ["ANALYST", "RISK_LEAD", "ADMIN"], icon: "loans" },
   { label: "Alerts", to: "/app/alerts", roles: ["ANALYST", "RISK_LEAD", "ADMIN"], icon: "alerts" },
+  { label: "Integrations", to: "/app/integrations", roles: ["ADMIN"], icon: "integrations" },
+  { label: "Workflows", to: "/app/workflows", roles: ["ANALYST", "RISK_LEAD", "ADMIN"], icon: "workflows" },
+  { label: "Policy Studio", to: "/app/policies", roles: ["ANALYST", "RISK_LEAD", "ADMIN"], icon: "policies" },
+  { label: "Change Control", to: "/app/change-control", roles: ["ANALYST", "RISK_LEAD", "ADMIN"], icon: "change-control" },
   { label: "Reports", to: "/app/reports", roles: ["ANALYST", "RISK_LEAD", "ADMIN"], icon: "reports" },
   { label: "Users", to: "/app/admin/users", roles: ["ADMIN"], icon: "users" },
   { label: "Settings", to: "/app/settings", roles: ["ANALYST", "RISK_LEAD", "ADMIN"], icon: "settings" },
@@ -98,6 +102,18 @@ function NavIcon({ kind }: { kind: MenuItem["icon"] }) {
   }
   if (kind === "reports") {
     return <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M3 2.5h7l3 3V13.5H3V2.5Z" stroke="currentColor" strokeWidth="1.3"/><path d="M10 2.5v3h3" stroke="currentColor" strokeWidth="1.3"/></svg>;
+  }
+  if (kind === "integrations") {
+    return <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M3.5 5.2a2.2 2.2 0 1 0 0 4.4m9-4.4a2.2 2.2 0 1 1 0 4.4M5.7 7.4h4.6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>;
+  }
+  if (kind === "workflows") {
+    return <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><rect x="2.7" y="2.7" width="3.6" height="3.6" rx=".8" stroke="currentColor" strokeWidth="1.2"/><rect x="9.7" y="9.7" width="3.6" height="3.6" rx=".8" stroke="currentColor" strokeWidth="1.2"/><path d="M6.4 4.5h3.2v3.2" stroke="currentColor" strokeWidth="1.2"/><path d="M9.6 7.7 6.2 11" stroke="currentColor" strokeWidth="1.2"/></svg>;
+  }
+  if (kind === "policies") {
+    return <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M3 3h10v10H3z" stroke="currentColor" strokeWidth="1.2"/><path d="M5 6.2h6M5 8.4h6M5 10.6h3.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg>;
+  }
+  if (kind === "change-control") {
+    return <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 2.5v2.1M8 11.4v2.1M3.8 4.2l1.5 1.5M10.7 11.1l1.5 1.5M2.5 8h2.1M11.4 8h2.1M3.8 11.8l1.5-1.5M10.7 4.9l1.5-1.5" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"/><circle cx="8" cy="8" r="2.1" stroke="currentColor" strokeWidth="1.2"/></svg>;
   }
   if (kind === "users") {
     return <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="6" cy="6" r="2.3" stroke="currentColor" strokeWidth="1.3"/><path d="M2.8 12.5c.4-1.6 1.7-2.7 3.2-2.7s2.8 1.1 3.2 2.7" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/><path d="M12.5 6.2v3.6M10.7 8h3.6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>;

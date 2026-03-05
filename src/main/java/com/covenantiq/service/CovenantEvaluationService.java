@@ -25,17 +25,26 @@ public class CovenantEvaluationService {
     private final CovenantResultRepository covenantResultRepository;
     private final FinancialRatioService financialRatioService;
     private final AlertService alertService;
+    private final OutboxEventPublisher outboxEventPublisher;
+    private final RulesetService rulesetService;
+    private final CollateralExceptionService collateralExceptionService;
 
     public CovenantEvaluationService(
             CovenantRepository covenantRepository,
             CovenantResultRepository covenantResultRepository,
             FinancialRatioService financialRatioService,
-            AlertService alertService
+            AlertService alertService,
+            OutboxEventPublisher outboxEventPublisher,
+            RulesetService rulesetService,
+            CollateralExceptionService collateralExceptionService
     ) {
         this.covenantRepository = covenantRepository;
         this.covenantResultRepository = covenantResultRepository;
         this.financialRatioService = financialRatioService;
         this.alertService = alertService;
+        this.outboxEventPublisher = outboxEventPublisher;
+        this.rulesetService = rulesetService;
+        this.collateralExceptionService = collateralExceptionService;
     }
 
     @Transactional
@@ -57,17 +66,55 @@ public class CovenantEvaluationService {
         }
 
         List<CovenantResult> saved = covenantResultRepository.saveAll(results);
-        saved.stream()
-                .filter(r -> r.getStatus() == CovenantResultStatus.BREACH)
-                .forEach(r -> alertService.createAlert(
-                        loan,
-                        statement,
-                        AlertType.BREACH,
-                        "Covenant breach for " + r.getCovenant().getType() + ". Actual=" + r.getActualValue()
-                                + ", Threshold=" + r.getCovenant().getThresholdValue(),
-                        r.getCovenant().getSeverityLevel(),
-                        "BREACH_" + r.getCovenant().getType()
+        saved.forEach(result -> {
+            outboxEventPublisher.publish("CovenantResult", result.getId(), "CovenantEvaluated", java.util.Map.of(
+                    "loanId", loan.getId(),
+                    "statementId", statement.getId(),
+                    "covenantId", result.getCovenant().getId(),
+                    "status", result.getStatus().name(),
+                    "severity", result.getCovenant().getSeverityLevel().name()
+            ));
+
+            if (result.getStatus() == CovenantResultStatus.BREACH) {
+                boolean activeException = collateralExceptionService
+                        .getActiveApprovedException(loan.getId(), result.getCovenant().getId())
+                        .isPresent();
+                RulesetService.RuleDecision decision = rulesetService.evaluatePublished("COVENANT_EVAL_DEFAULT", java.util.Map.of(
+                        "comparisonPass", false,
+                        "activeException", activeException
                 ));
+                outboxEventPublisher.publish("CovenantResult", result.getId(), "CovenantBreachDetected", java.util.Map.of(
+                        "loanId", loan.getId(),
+                        "statementId", statement.getId(),
+                        "covenantId", result.getCovenant().getId(),
+                        "severity", result.getCovenant().getSeverityLevel().name(),
+                        "reasonCode", decision.reasonCode()
+                ));
+                if (!decision.breach() && activeException) {
+                    alertService.createAlert(
+                            loan,
+                            statement,
+                            AlertType.EARLY_WARNING,
+                            "Covenant exception active: downgraded breach to warning for " + result.getCovenant().getType(),
+                            result.getCovenant().getSeverityLevel(),
+                            decision.reasonCode()
+                    );
+                } else {
+                    AlertType alertType = "EARLY_WARNING".equalsIgnoreCase(decision.alertType())
+                            ? AlertType.EARLY_WARNING
+                            : AlertType.BREACH;
+                    alertService.createAlert(
+                            loan,
+                            statement,
+                            alertType,
+                            "Covenant breach for " + result.getCovenant().getType() + ". Actual=" + result.getActualValue()
+                                    + ", Threshold=" + result.getCovenant().getThresholdValue(),
+                            result.getCovenant().getSeverityLevel(),
+                            decision.reasonCode()
+                    );
+                }
+            }
+        });
 
         return saved;
     }
