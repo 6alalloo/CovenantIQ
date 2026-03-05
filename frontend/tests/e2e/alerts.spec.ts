@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { loginAs, openFirstLoan, openLoanTab } from "./helpers";
+import { loginAs } from "./helpers";
 
 test.beforeEach(async ({ page }) => {
   await loginAs(page, "ANALYST");
@@ -33,25 +33,27 @@ test("E2E-059 view loan link opens loan alerts with focusAlert", async ({ page }
 
 test("E2E-048 loan alert can be resolved", async ({ page }) => {
   await loginAs(page, "ADMIN");
-  await openFirstLoan(page);
-  await openLoanTab(page, "alerts");
-  const resolveButton = page.locator('[data-testid^="alert-resolve-"]').first();
-  await expect(resolveButton).toBeVisible();
-  const testId = await resolveButton.getAttribute("data-testid");
-  if (!testId) {
+  await page.goto("/app/alerts");
+  const firstView = page.getByRole("link", { name: "View Loan" }).first();
+  await expect(firstView).toBeVisible();
+  await firstView.click();
+  await expect(page).toHaveURL(/\/app\/loans\/\d+\/alerts\?focusAlert=\d+$/);
+
+  const openRow = page.locator("tbody tr", { hasText: "Open" }).first();
+  await expect(openRow).toBeVisible();
+  const acknowledgeButton = openRow.getByRole("button", { name: "Acknowledge" });
+  const reviewButton = openRow.getByRole("button", { name: "Review" });
+  const resolveButton = openRow.getByRole("button", { name: "Resolve" });
+  const resolveTestId = await resolveButton.getAttribute("data-testid");
+  if (!resolveTestId) {
     throw new Error("Unable to resolve alert test id.");
   }
-  const alertId = testId.replace("alert-resolve-", "");
-  const statusCell = page.getByTestId(`alert-status-${alertId}`);
-  const currentStatus = (await statusCell.innerText()).trim().toLowerCase();
+  const alertId = resolveTestId.replace("alert-resolve-", "");
 
-  if (currentStatus.includes("open")) {
-    const ackButton = page.getByTestId(`alert-ack-${alertId}`);
-    await expect(ackButton).toBeVisible();
-    await ackButton.click();
-    await expect(statusCell).toContainText("Acknowledged");
-  }
-
+  await acknowledgeButton.click();
+  await expect(page.getByTestId(`alert-status-${alertId}`)).toContainText("Acknowledged");
+  await page.getByTestId(`alert-review-${alertId}`).click();
+  await expect(page.getByTestId(`alert-status-${alertId}`)).toContainText("Under Review");
   await page.getByTestId(`alert-resolve-${alertId}`).click();
   await expect(page.getByTestId(`alert-status-${alertId}`)).toContainText("Resolved");
 });

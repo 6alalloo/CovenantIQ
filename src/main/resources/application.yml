@@ -38,11 +38,19 @@ management:
       show-details: always
 
 app:
+  mode:
+    demo-enabled: false
+    test-enabled: false
+  seed:
+    enabled: true
   security:
     enabled: true
   jwt:
     secret: "change-this-secret-for-prod-change-this-secret"
     access-token-minutes: 60
     refresh-token-days: 7
+  workflow:
+    bootstrap-default-alert-workflow-enabled: true
   webhook:
     encryption-key-base64: ${APP_WEBHOOK_ENCRYPTION_KEY_BASE64:MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=}
+

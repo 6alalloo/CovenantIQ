@@ -1,0 +1,8 @@
+app:
+  mode:
+    demo-enabled: true
+    test-enabled: false
+  seed:
+    enabled: true
+  workflow:
+    bootstrap-default-alert-workflow-enabled: true

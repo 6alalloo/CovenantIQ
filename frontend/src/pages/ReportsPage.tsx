@@ -1,13 +1,14 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { exportLoanAlerts, exportLoanCovenantResults, getLoans } from "../api/client";
-import type { Loan } from "../types/api";
 import { PageSection, Surface } from "../components/layout";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Select } from "../components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
+import { useRuntimeConfig } from "../runtime/RuntimeConfigContext";
 import { formatDateTime, formatEnumLabel } from "../lib/format";
+import type { Loan } from "../types/api";
 
 type ExportHistory = {
   id: number;
@@ -19,16 +20,24 @@ type ExportHistory = {
 };
 
 export function ReportsPage() {
+  const { sampleUxEnabled } = useRuntimeConfig();
   const [searchParams] = useSearchParams();
   const seedLoan = searchParams.get("loanId");
   const [loans, setLoans] = useState<Loan[]>([]);
   const [selectedLoanId, setSelectedLoanId] = useState<number | "">("");
   const [dataset, setDataset] = useState<"alerts" | "covenant-results">("alerts");
-  const [from, setFrom] = useState("2026-01-01");
-  const [to, setTo] = useState("2026-02-26");
+  const [from, setFrom] = useState(sampleUxEnabled ? "2026-01-01" : "");
+  const [to, setTo] = useState(sampleUxEnabled ? "2026-02-26" : "");
   const [history, setHistory] = useState<ExportHistory[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
+
+  useEffect(() => {
+    if (!sampleUxEnabled) {
+      setFrom("");
+      setTo("");
+    }
+  }, [sampleUxEnabled]);
 
   useEffect(() => {
     (async () => {
@@ -89,7 +98,7 @@ export function ReportsPage() {
   };
 
   return (
-    <PageSection title="Reports & Export" subtitle="Operational export center with client-side history for MVP.">
+    <PageSection title="Reports & Export" subtitle="Operational export center with client-side history for the current browser session.">
       <div className="grid gap-3 xl:grid-cols-[1fr_1.2fr]">
         <Surface className="p-5">
           <h2 className="panel-title">Export Setup</h2>
@@ -156,7 +165,7 @@ export function ReportsPage() {
                   <TableCell className="font-numeric">#{item.loanId}</TableCell>
                   <TableCell>{formatEnumLabel(item.dataset)}</TableCell>
                   <TableCell>
-                    {item.from} to {item.to}
+                    {item.from || "-"} to {item.to || "-"}
                   </TableCell>
                 </TableRow>
               ))}

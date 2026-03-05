@@ -30,6 +30,7 @@ test("E2E-038 loan detail tabs are accessible", async ({ page }) => {
   await openLoanTab(page, "statements");
   await openLoanTab(page, "results");
   await openLoanTab(page, "alerts");
+  await openLoanTab(page, "collateral");
   await openLoanTab(page, "documents");
   await openLoanTab(page, "comments");
   await openLoanTab(page, "activity");

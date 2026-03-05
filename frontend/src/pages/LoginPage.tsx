@@ -1,16 +1,32 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { ApiError } from "../api/client";
 import { BrandLogo } from "../components/BrandLogo";
+import { useRuntimeConfig } from "../runtime/RuntimeConfigContext";
 
 export function LoginPage() {
-  const [username, setUsername] = useState("analyst@demo.com");
-  const [password, setPassword] = useState("Demo123!");
+  const { sampleUxEnabled } = useRuntimeConfig();
+  const defaultCredentials = useMemo(
+    () => ({
+      username: sampleUxEnabled ? "analyst@demo.com" : "",
+      password: sampleUxEnabled ? "Demo123!" : "",
+    }),
+    [sampleUxEnabled]
+  );
+  const [username, setUsername] = useState(defaultCredentials.username);
+  const [password, setPassword] = useState(defaultCredentials.password);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { login } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (sampleUxEnabled && !username && !password) {
+      setUsername(defaultCredentials.username);
+      setPassword(defaultCredentials.password);
+    }
+  }, [defaultCredentials.password, defaultCredentials.username, password, sampleUxEnabled, username]);
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -35,9 +51,15 @@ export function LoginPage() {
           <BrandLogo size="sm" />
           <p className="mt-2 text-[10px] uppercase tracking-[0.16em] text-[var(--text-secondary)]">Secure Access</p>
         </div>
-        <p className="text-sm text-[var(--text-secondary)]">
-          Use seeded credentials. Analyst: `analyst@demo.com` / `Demo123!`
-        </p>
+        {sampleUxEnabled ? (
+          <p className="text-sm text-[var(--text-secondary)]">
+            Sample UX is enabled. Seeded demo credentials are prefilled for local demonstration.
+          </p>
+        ) : (
+          <p className="text-sm text-[var(--text-secondary)]">
+            Sign in with an explicitly provisioned account.
+          </p>
+        )}
 
         <label className="mt-5 block text-xs uppercase tracking-[0.08em] text-[var(--text-secondary)]">Username</label>
         <input

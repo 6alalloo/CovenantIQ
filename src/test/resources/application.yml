@@ -1,0 +1,22 @@
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: always
+
+app:
+  mode:
+    test-enabled: true
+  seed:
+    enabled: true
+  security:
+    enabled: true
+  jwt:
+    secret: "change-this-secret-for-prod-change-this-secret"
+    access-token-minutes: 60
+    refresh-token-days: 7
+  webhook:
+    encryption-key-base64: "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY="

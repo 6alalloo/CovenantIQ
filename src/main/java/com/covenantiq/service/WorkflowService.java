@@ -26,6 +26,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -47,6 +48,7 @@ public class WorkflowService {
     private final CurrentUserService currentUserService;
     private final ObjectMapper objectMapper;
     private final OutboxEventPublisher outboxEventPublisher;
+    private final boolean bootstrapDefaultAlertWorkflowEnabled;
 
     public WorkflowService(
             WorkflowDefinitionRepository workflowDefinitionRepository,
@@ -56,7 +58,8 @@ public class WorkflowService {
             WorkflowTransitionLogRepository workflowTransitionLogRepository,
             CurrentUserService currentUserService,
             ObjectMapper objectMapper,
-            OutboxEventPublisher outboxEventPublisher
+            OutboxEventPublisher outboxEventPublisher,
+            @Value("${app.workflow.bootstrap-default-alert-workflow-enabled:true}") boolean bootstrapDefaultAlertWorkflowEnabled
     ) {
         this.workflowDefinitionRepository = workflowDefinitionRepository;
         this.workflowStateRepository = workflowStateRepository;
@@ -66,11 +69,15 @@ public class WorkflowService {
         this.currentUserService = currentUserService;
         this.objectMapper = objectMapper;
         this.outboxEventPublisher = outboxEventPublisher;
+        this.bootstrapDefaultAlertWorkflowEnabled = bootstrapDefaultAlertWorkflowEnabled;
     }
 
     @PostConstruct
     @Transactional
     public void ensureDefaultAlertWorkflow() {
+        if (!bootstrapDefaultAlertWorkflowEnabled) {
+            return;
+        }
         if (workflowDefinitionRepository.findByEntityTypeAndStatus(ALERT_ENTITY, WorkflowDefinitionStatus.PUBLISHED).isPresent()) {
             return;
         }
@@ -380,3 +387,5 @@ public class WorkflowService {
         }
     }
 }
+
+

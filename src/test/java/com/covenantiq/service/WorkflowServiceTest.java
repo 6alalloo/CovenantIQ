@@ -54,7 +54,8 @@ class WorkflowServiceTest {
                 workflowTransitionLogRepository,
                 currentUserService,
                 new ObjectMapper(),
-                outboxEventPublisher
+                outboxEventPublisher,
+                true
         );
 
         CreateWorkflowDefinitionRequest request = new CreateWorkflowDefinitionRequest(
@@ -80,3 +81,5 @@ class WorkflowServiceTest {
         verify(workflowDefinitionRepository, never()).save(org.mockito.ArgumentMatchers.any());
     }
 }
+
+

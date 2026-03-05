@@ -13,8 +13,12 @@ export async function loginAs(page: Page, role: TestRole = "ANALYST") {
   await page.goto("/login");
   await page.getByTestId("login-username").fill(creds.username);
   await page.getByTestId("login-password").fill(creds.password);
+  const loginResponse = page.waitForResponse(
+    (response) => response.url().includes("/api/v1/auth/login") && response.request().method() === "POST"
+  );
   await page.getByTestId("login-submit").click();
-  await expect(page).toHaveURL(/\/app\/dashboard$/);
+  await expect((await loginResponse).ok()).toBeTruthy();
+  await expect(page).toHaveURL(/\/app\/dashboard$/, { timeout: 15000 });
 }
 
 export async function logout(page: Page) {
@@ -45,7 +49,10 @@ export function getLoanIdFromUrl(page: Page): number {
   return Number(match[1]);
 }
 
-export async function openLoanTab(page: Page, tab: "overview" | "statements" | "results" | "alerts" | "documents" | "comments" | "activity") {
+export async function openLoanTab(
+  page: Page,
+  tab: "overview" | "statements" | "results" | "alerts" | "collateral" | "documents" | "comments" | "activity"
+) {
   await page.getByTestId(`loan-tab-${tab}`).click();
   await expect(page).toHaveURL(new RegExp(`/app/loans/\\d+/${tab}$`));
 }

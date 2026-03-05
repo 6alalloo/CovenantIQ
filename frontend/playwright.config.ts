@@ -4,10 +4,10 @@ const isCI = !!process.env.CI;
 
 export default defineConfig({
   testDir: "./tests/e2e",
-  fullyParallel: true,
+  fullyParallel: false,
   forbidOnly: isCI,
   retries: isCI ? 2 : 0,
-  workers: isCI ? 1 : undefined,
+  workers: isCI ? 1 : 4,
   reporter: [["list"], ["html", { outputFolder: "playwright-report", open: "never" }]],
   use: {
     baseURL: "http://127.0.0.1:5173",
@@ -26,13 +26,13 @@ export default defineConfig({
       command: "mvn spring-boot:run",
       cwd: "..",
       url: "http://127.0.0.1:8080/actuator/health",
-      reuseExistingServer: false,
+      reuseExistingServer: !isCI,
       timeout: 180 * 1000,
     },
     {
       command: "npm run dev -- --host 127.0.0.1 --port 5173",
       url: "http://127.0.0.1:5173/login",
-      reuseExistingServer: false,
+      reuseExistingServer: !isCI,
       timeout: 120 * 1000,
     },
   ],

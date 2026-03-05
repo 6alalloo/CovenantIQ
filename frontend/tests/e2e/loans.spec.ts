@@ -12,9 +12,12 @@ test("E2E-027 loans table loads seeded rows", async ({ page }) => {
 });
 
 test("E2E-028 search filters loan list", async ({ page }) => {
-  await page.getByPlaceholder("Search borrower or loan id").fill("Acme");
+  const firstBorrower = (await page.locator('[data-testid^="loan-row-"]').first().locator("td").first().innerText()).trim();
+  const term = firstBorrower.split(" ")[0];
+  await page.getByPlaceholder("Search borrower or loan id").fill(term);
   const rows = page.locator('[data-testid^="loan-row-"]');
   await expect.poll(async () => rows.count()).toBeGreaterThan(0);
+  await expect(rows.first()).toContainText(term);
 });
 
 test("E2E-030 status filter active works", async ({ page }) => {

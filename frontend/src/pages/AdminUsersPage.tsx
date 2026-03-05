@@ -1,10 +1,10 @@
 import { FormEvent, useEffect, useState } from "react";
 import { createUser, deactivateUser, getUsers, updateUserRoles } from "../api/client";
-import type { UserResponse, UserRole } from "../types/api";
 import { PageSection, Surface } from "../components/layout";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { formatEnumLabel } from "../lib/format";
+import type { UserResponse, UserRole } from "../types/api";
 
 const ROLE_OPTIONS: UserRole[] = ["ANALYST", "RISK_LEAD", "ADMIN"];
 
@@ -15,7 +15,7 @@ export function AdminUsersPage() {
     username: "",
     email: "",
     password: "",
-    roles: ["ANALYST"] as UserRole[],
+    roles: [] as UserRole[],
   });
 
   const load = async () => {
@@ -35,7 +35,7 @@ export function AdminUsersPage() {
     event.preventDefault();
     try {
       await createUser(form);
-      setForm({ username: "", email: "", password: "", roles: ["ANALYST"] });
+      setForm({ username: "", email: "", password: "", roles: [] });
       await load();
     } catch (e) {
       setError((e as Error).message);
@@ -159,7 +159,8 @@ export function AdminUsersPage() {
                 </label>
               ))}
             </div>
-            <Button className="w-full" type="submit">
+            <p className="text-xs text-[var(--text-secondary)]">Select at least one role before creating the user.</p>
+            <Button className="w-full" type="submit" disabled={!form.roles.length}>
               Create User
             </Button>
           </form>

@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { createWorkflowDefinition, getWorkflowDefinitions, publishWorkflowDefinition } from "../api/client";
-import type { WorkflowDefinition } from "../types/api";
 import { PageSection } from "../components/layout";
+import { useRuntimeConfig } from "../runtime/RuntimeConfigContext";
+import type { WorkflowDefinition } from "../types/api";
 
 const DEFAULT_ALERT_WORKFLOW = {
   entityType: "ALERT",
@@ -20,6 +21,7 @@ const DEFAULT_ALERT_WORKFLOW = {
 };
 
 export function WorkflowDesignerPage() {
+  const { sampleUxEnabled } = useRuntimeConfig();
   const [definitions, setDefinitions] = useState<WorkflowDefinition[]>([]);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,18 +40,24 @@ export function WorkflowDesignerPage() {
   return (
     <PageSection title="Workflow Designer" subtitle="Draft, publish, and review alert workflow versions.">
       {error && <p className="mb-3 text-sm text-[var(--accent-danger)]">{error}</p>}
-      <div className="mb-4 flex gap-2">
-        <button
-          className="btn-primary"
-          onClick={async () => {
-            await createWorkflowDefinition(DEFAULT_ALERT_WORKFLOW);
-            await load();
-          }}
-          type="button"
-        >
-          Create Alert Workflow Draft
-        </button>
-      </div>
+      {sampleUxEnabled ? (
+        <div className="mb-4 flex gap-2">
+          <button
+            className="btn-primary"
+            onClick={async () => {
+              await createWorkflowDefinition(DEFAULT_ALERT_WORKFLOW);
+              await load();
+            }}
+            type="button"
+          >
+            Create Sample Alert Workflow Draft
+          </button>
+        </div>
+      ) : (
+        <div className="card mb-4 text-sm text-[var(--text-secondary)]">
+          Sample workflow scaffolding is disabled in normal mode.
+        </div>
+      )}
       <div className="grid gap-3">
         {definitions.map((definition) => (
           <div key={definition.id} className="card">
@@ -61,7 +69,7 @@ export function WorkflowDesignerPage() {
             </div>
             <p className="mb-2 text-xs text-[var(--text-secondary)]">{definition.transitions.length} transitions</p>
             {definition.status !== "PUBLISHED" && (
-              <button className="btn-secondary" onClick={() => publishWorkflowDefinition(definition.id, "Promote tested draft")} type="button">
+              <button className="btn-secondary" onClick={() => publishWorkflowDefinition(definition.id, sampleUxEnabled ? "Promote tested draft" : "Publish workflow definition")} type="button">
                 Publish
               </button>
             )}

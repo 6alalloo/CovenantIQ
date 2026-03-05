@@ -5,18 +5,26 @@ import {
   getWebhookSubscriptions,
   retryWebhookOutboxEvent,
 } from "../api/client";
-import type { WebhookDelivery, WebhookSubscription } from "../types/api";
 import { PageSection } from "../components/layout";
+import { useRuntimeConfig } from "../runtime/RuntimeConfigContext";
+import type { WebhookDelivery, WebhookSubscription } from "../types/api";
 
 export function IntegrationsPage() {
+  const { sampleUxEnabled } = useRuntimeConfig();
   const [subscriptions, setSubscriptions] = useState<WebhookSubscription[]>([]);
   const [selected, setSelected] = useState<number | null>(null);
   const [deliveries, setDeliveries] = useState<WebhookDelivery[]>([]);
   const [name, setName] = useState("");
   const [endpointUrl, setEndpointUrl] = useState("");
   const [secret, setSecret] = useState("");
-  const [eventFilters, setEventFilters] = useState("AlertCreated,AlertStatusChanged");
+  const [eventFilters, setEventFilters] = useState(sampleUxEnabled ? "AlertCreated,AlertStatusChanged" : "");
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!sampleUxEnabled) {
+      setEventFilters("");
+    }
+  }, [sampleUxEnabled]);
 
   const load = async () => {
     try {
@@ -47,6 +55,7 @@ export function IntegrationsPage() {
       setName("");
       setEndpointUrl("");
       setSecret("");
+      setEventFilters(sampleUxEnabled ? "AlertCreated,AlertStatusChanged" : "");
       await load();
     } catch (e) {
       setError((e as Error).message);

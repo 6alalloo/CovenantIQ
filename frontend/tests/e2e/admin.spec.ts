@@ -20,6 +20,7 @@ test("E2E-086 create user works and E2E-089 deactivate works", async ({ page }) 
   await page.getByPlaceholder("Username").fill(username);
   await page.getByPlaceholder("Email").fill(username);
   await page.getByPlaceholder("Password").fill(password);
+  await page.getByLabel("Analyst").check();
   await page.getByRole("button", { name: "Create User" }).click();
   const row = page.locator("tr", { hasText: username }).first();
   await expect(row).toBeVisible();

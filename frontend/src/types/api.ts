@@ -30,6 +30,16 @@ export type ActivityEventType =
   | "USER_UPDATED"
   | "USER_DEACTIVATED";
 
+export type BackendMode = "NORMAL" | "DEMO" | "TEST";
+
+export type RuntimeConfig = {
+  backendMode: BackendMode;
+  demoMode: boolean;
+  testMode: boolean;
+  sampleContentAvailable: boolean;
+  strictSecretValidationEnabled: boolean;
+};
+
 export type AuthSession = {
   accessToken: string;
   refreshToken: string;
@@ -357,3 +367,4 @@ export type ReleaseBatch = {
     timestampUtc: string;
   }>;
 };
+

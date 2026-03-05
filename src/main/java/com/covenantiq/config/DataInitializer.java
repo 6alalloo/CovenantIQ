@@ -57,6 +57,7 @@ public class DataInitializer {
     @Bean
     @ConditionalOnProperty(name = "app.seed.enabled", havingValue = "true", matchIfMissing = true)
     CommandLineRunner seedData(
+            AppModeProperties appModeProperties,
             LoanRepository loanRepository,
             UserAccountRepository userAccountRepository,
             CommentRepository commentRepository,
@@ -68,6 +69,9 @@ public class DataInitializer {
             PasswordEncoder passwordEncoder
     ) {
         return args -> {
+            if (!appModeProperties.sampleContentAvailable()) {
+                return;
+            }
             if (userAccountRepository.count() == 0) {
                 seedUsers(userAccountRepository, passwordEncoder);
             }
@@ -405,3 +409,5 @@ public class DataInitializer {
     ) {
     }
 }
+
+

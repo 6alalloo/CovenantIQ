@@ -9,20 +9,34 @@ import {
   getCovenantExceptions,
   getCovenants,
 } from "../api/client";
+import { useRuntimeConfig } from "../runtime/RuntimeConfigContext";
 import type { CollateralAsset, Covenant, CovenantException } from "../types/api";
 
 export function LoanCollateralExceptionsPage() {
+  const { sampleUxEnabled } = useRuntimeConfig();
   const loanId = Number(useParams().loanId);
   const [collaterals, setCollaterals] = useState<CollateralAsset[]>([]);
   const [exceptions, setExceptions] = useState<CovenantException[]>([]);
   const [covenants, setCovenants] = useState<Covenant[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  const [assetType, setAssetType] = useState("ACCOUNTS_RECEIVABLE");
-  const [nominalValue, setNominalValue] = useState("1000000");
-  const [haircutPct, setHaircutPct] = useState("0.2");
-  const [exceptionReason, setExceptionReason] = useState("Temporary covenant waiver request");
+  const [assetType, setAssetType] = useState(sampleUxEnabled ? "ACCOUNTS_RECEIVABLE" : "");
+  const [nominalValue, setNominalValue] = useState(sampleUxEnabled ? "1000000" : "");
+  const [haircutPct, setHaircutPct] = useState(sampleUxEnabled ? "0.2" : "");
+  const [lienRank, setLienRank] = useState(sampleUxEnabled ? "1" : "");
+  const [currency, setCurrency] = useState(sampleUxEnabled ? "USD" : "");
+  const [exceptionReason, setExceptionReason] = useState(sampleUxEnabled ? "Temporary covenant waiver request" : "");
   const [covenantId, setCovenantId] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (sampleUxEnabled) return;
+    setAssetType("");
+    setNominalValue("");
+    setHaircutPct("");
+    setLienRank("");
+    setCurrency("");
+    setExceptionReason("");
+  }, [sampleUxEnabled]);
 
   const load = async () => {
     try {
@@ -46,8 +60,8 @@ export function LoanCollateralExceptionsPage() {
       assetType,
       nominalValue: Number(nominalValue),
       haircutPct: Number(haircutPct),
-      lienRank: 1,
-      currency: "USD",
+      lienRank: Number(lienRank),
+      currency,
       effectiveDate: new Date().toISOString().slice(0, 10),
     });
     await load();
@@ -72,9 +86,13 @@ export function LoanCollateralExceptionsPage() {
       <div className="grid gap-4 lg:grid-cols-2">
         <form className="card space-y-2" onSubmit={onAddCollateral}>
           <h3 className="text-sm font-semibold">Add Collateral</h3>
-          <input className="input" value={assetType} onChange={(e) => setAssetType(e.target.value)} placeholder="Asset type" />
-          <input className="input" value={nominalValue} onChange={(e) => setNominalValue(e.target.value)} placeholder="Nominal value" />
-          <input className="input" value={haircutPct} onChange={(e) => setHaircutPct(e.target.value)} placeholder="Haircut pct (0-1)" />
+          <input className="input" value={assetType} onChange={(e) => setAssetType(e.target.value)} placeholder="Asset type" required />
+          <input className="input" value={nominalValue} onChange={(e) => setNominalValue(e.target.value)} placeholder="Nominal value" required />
+          <input className="input" value={haircutPct} onChange={(e) => setHaircutPct(e.target.value)} placeholder="Haircut pct (0-1)" required />
+          <div className="grid grid-cols-2 gap-2">
+            <input className="input" value={lienRank} onChange={(e) => setLienRank(e.target.value)} placeholder="Lien rank" required />
+            <input className="input" value={currency} onChange={(e) => setCurrency(e.target.value)} placeholder="Currency" required />
+          </div>
           <button className="btn-primary" type="submit">Add Collateral</button>
         </form>
         <form className="card space-y-2" onSubmit={onRequestException}>
@@ -84,7 +102,7 @@ export function LoanCollateralExceptionsPage() {
               <option key={c.id} value={c.id}>{c.type}</option>
             ))}
           </select>
-          <input className="input" value={exceptionReason} onChange={(e) => setExceptionReason(e.target.value)} placeholder="Reason" />
+          <input className="input" value={exceptionReason} onChange={(e) => setExceptionReason(e.target.value)} placeholder="Reason" required />
           <button className="btn-primary" type="submit">Request Exception</button>
         </form>
       </div>

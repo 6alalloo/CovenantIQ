@@ -21,7 +21,10 @@ test("E2E-091 settings page save flow works", async ({ page }) => {
   await expect(page).toHaveURL(/\/app\/settings$/);
   await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();
 
-  await page.getByRole("switch").first().click();
+  const themeSelect = page.getByRole("combobox").first();
+  const current = await themeSelect.inputValue();
+  const next = current === "light" ? "dark" : "light";
+  await themeSelect.selectOption(next);
   await expect(page.getByText("You have unsaved changes.")).toBeVisible();
   await page.getByRole("button", { name: "Save Changes" }).click();
   await expect(page.getByText("All changes are saved.")).toBeVisible();

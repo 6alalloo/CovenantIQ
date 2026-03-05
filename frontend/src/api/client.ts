@@ -19,6 +19,7 @@ import type {
   ReleaseBatch,
   RiskDetails,
   RiskSummary,
+  RuntimeConfig,
   Ruleset,
   RulesetValidationResult,
   RulesetVersion,
@@ -75,6 +76,13 @@ export function setStoredSession(session: AuthSession) {
   localStorage.setItem(SESSION_KEY, JSON.stringify(session));
 }
 
+export async function getRuntimeConfig() {
+  const response = await fetch(`${BASE}/runtime-config`);
+  if (!response.ok) {
+    throw new ApiError(`HTTP ${response.status}`, response.status);
+  }
+  return response.json() as Promise<RuntimeConfig>;
+}
 export function clearStoredSession() {
   localStorage.removeItem(SESSION_KEY);
 }
@@ -585,3 +593,4 @@ export function rollbackRelease(id: number, payload: { targetReleaseId: number; 
 export function getReleases() {
   return request<ReleaseBatch[]>("/releases");
 }
+
