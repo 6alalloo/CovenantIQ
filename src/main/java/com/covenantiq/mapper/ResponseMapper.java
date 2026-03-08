@@ -22,7 +22,12 @@ public final class ResponseMapper {
                 loan.getBorrowerName(),
                 loan.getPrincipalAmount(),
                 loan.getStartDate(),
-                loan.getStatus()
+                loan.getStatus(),
+                loan.getExternalLoanId(),
+                loan.getSourceSystem(),
+                loan.getLastSyncedAt(),
+                loan.getSourceUpdatedAt(),
+                loan.isSyncManaged()
         );
     }
 

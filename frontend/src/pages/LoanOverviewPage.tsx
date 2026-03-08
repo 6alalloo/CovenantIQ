@@ -267,6 +267,8 @@ export function LoanOverviewPage() {
             <Detail label="Loan ID" value={`#${loan.id}`} mono />
             <Detail label="Principal" value={`$${Number(loan.principalAmount).toLocaleString()}`} mono />
             <Detail label="Status" value={formatEnumLabel(loan.status)} />
+            {loan.syncManaged ? <Detail label="Source" value={`${loan.sourceSystem ?? "External"} | ${loan.externalLoanId ?? "No ID"}`} mono /> : null}
+            {loan.syncManaged && loan.lastSyncedAt ? <Detail label="Last Sync" value={new Date(loan.lastSyncedAt).toLocaleString()} /> : null}
           </div>
         ) : null}
 
@@ -428,3 +430,5 @@ function Detail({ label, value, mono = false }: { label: string; value: string; 
     </div>
   );
 }
+
+

@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { AppShell } from "./components/AppShell";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { AdminLoanImportsPage } from "./pages/AdminLoanImportsPage";
 import { AdminUsersPage } from "./pages/AdminUsersPage";
 import { AlertsPage } from "./pages/AlertsPage";
 import { ChangeControlPage } from "./pages/ChangeControlPage";
@@ -78,6 +79,14 @@ export default function App() {
           element={
             <ProtectedRoute allowRoles={["ADMIN"]}>
               <AdminUsersPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="admin/loan-imports"
+          element={
+            <ProtectedRoute allowRoles={["ADMIN"]}>
+              <AdminLoanImportsPage />
             </ProtectedRoute>
           }
         />

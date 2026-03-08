@@ -11,14 +11,19 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "loans")
+@Table(
+        name = "loans",
+        uniqueConstraints = @UniqueConstraint(name = "uk_loan_source_external", columnNames = {"sourceSystem", "externalLoanId"})
+)
 public class Loan {
 
     @Id
@@ -37,6 +42,19 @@ public class Loan {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private LoanStatus status = LoanStatus.ACTIVE;
+
+    @Column(length = 120)
+    private String externalLoanId;
+
+    @Column(length = 80)
+    private String sourceSystem;
+
+    private OffsetDateTime lastSyncedAt;
+
+    private OffsetDateTime sourceUpdatedAt;
+
+    @Column(nullable = false)
+    private boolean syncManaged;
 
     @OneToMany(mappedBy = "loan", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Covenant> covenants = new ArrayList<>();
@@ -85,6 +103,46 @@ public class Loan {
 
     public void setStatus(LoanStatus status) {
         this.status = status;
+    }
+
+    public String getExternalLoanId() {
+        return externalLoanId;
+    }
+
+    public void setExternalLoanId(String externalLoanId) {
+        this.externalLoanId = externalLoanId;
+    }
+
+    public String getSourceSystem() {
+        return sourceSystem;
+    }
+
+    public void setSourceSystem(String sourceSystem) {
+        this.sourceSystem = sourceSystem;
+    }
+
+    public OffsetDateTime getLastSyncedAt() {
+        return lastSyncedAt;
+    }
+
+    public void setLastSyncedAt(OffsetDateTime lastSyncedAt) {
+        this.lastSyncedAt = lastSyncedAt;
+    }
+
+    public OffsetDateTime getSourceUpdatedAt() {
+        return sourceUpdatedAt;
+    }
+
+    public void setSourceUpdatedAt(OffsetDateTime sourceUpdatedAt) {
+        this.sourceUpdatedAt = sourceUpdatedAt;
+    }
+
+    public boolean isSyncManaged() {
+        return syncManaged;
+    }
+
+    public void setSyncManaged(boolean syncManaged) {
+        this.syncManaged = syncManaged;
     }
 
     public List<Covenant> getCovenants() {

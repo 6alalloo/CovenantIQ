@@ -8,7 +8,19 @@ type MenuItem = {
   label: string;
   to: string;
   roles: UserRole[];
-  icon: "dashboard" | "portfolio" | "loans" | "alerts" | "integrations" | "workflows" | "policies" | "change-control" | "reports" | "users" | "settings";
+  icon:
+    | "dashboard"
+    | "portfolio"
+    | "loans"
+    | "alerts"
+    | "integrations"
+    | "workflows"
+    | "policies"
+    | "change-control"
+    | "reports"
+    | "users"
+    | "loan-imports"
+    | "settings";
 };
 
 const MENU: MenuItem[] = [
@@ -22,6 +34,7 @@ const MENU: MenuItem[] = [
   { label: "Change Control", to: "/app/change-control", roles: ["ANALYST", "RISK_LEAD", "ADMIN"], icon: "change-control" },
   { label: "Reports", to: "/app/reports", roles: ["ANALYST", "RISK_LEAD", "ADMIN"], icon: "reports" },
   { label: "Users", to: "/app/admin/users", roles: ["ADMIN"], icon: "users" },
+  { label: "Loan Imports", to: "/app/admin/loan-imports", roles: ["ADMIN"], icon: "loan-imports" },
   { label: "Settings", to: "/app/settings", roles: ["ANALYST", "RISK_LEAD", "ADMIN"], icon: "settings" },
 ];
 
@@ -47,7 +60,7 @@ export function AppShell() {
             <NavLink
               key={item.to}
               to={item.to}
-              data-testid={`nav-${item.label.toLowerCase()}`}
+              data-testid={`nav-${item.label.toLowerCase().replace(/\s+/g, "-")}`}
               className={({ isActive }) =>
                 `group flex items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm font-semibold transition-colors duration-150 md:justify-center xl:justify-start ${
                   isActive
@@ -117,6 +130,9 @@ function NavIcon({ kind }: { kind: MenuItem["icon"] }) {
   }
   if (kind === "users") {
     return <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="6" cy="6" r="2.3" stroke="currentColor" strokeWidth="1.3"/><path d="M2.8 12.5c.4-1.6 1.7-2.7 3.2-2.7s2.8 1.1 3.2 2.7" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/><path d="M12.5 6.2v3.6M10.7 8h3.6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>;
+  }
+  if (kind === "loan-imports") {
+    return <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M3 2.8h6l4 4v6.4H3V2.8Z" stroke="currentColor" strokeWidth="1.2"/><path d="M9 2.8v4h4" stroke="currentColor" strokeWidth="1.2"/><path d="M5.2 10.2h5.6M5.2 12.2h5.6M8 8.1V12.2" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"/></svg>;
   }
   return <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 2.5a1.5 1.5 0 0 1 1.5 1.5v.2a4.4 4.4 0 0 1 1.1.6l.2-.2a1.5 1.5 0 1 1 2.1 2.1l-.2.2c.3.3.5.7.6 1.1h.2a1.5 1.5 0 1 1 0 3h-.2a4.4 4.4 0 0 1-.6 1.1l.2.2a1.5 1.5 0 0 1-2.1 2.1l-.2-.2a4.4 4.4 0 0 1-1.1.6v.2a1.5 1.5 0 1 1-3 0v-.2a4.4 4.4 0 0 1-1.1-.6l-.2.2a1.5 1.5 0 0 1-2.1-2.1l.2-.2a4.4 4.4 0 0 1-.6-1.1h-.2a1.5 1.5 0 0 1 0-3h.2a4.4 4.4 0 0 1 .6-1.1l-.2-.2A1.5 1.5 0 0 1 5.2 4.6l.2.2c.3-.3.7-.5 1.1-.6V4A1.5 1.5 0 0 1 8 2.5Zm0 4A2 2 0 1 0 8 10.5 2 2 0 0 0 8 6.5Z" stroke="currentColor" strokeWidth="1"/></svg>;
 }
