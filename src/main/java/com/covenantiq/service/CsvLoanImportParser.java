@@ -32,9 +32,9 @@ public class CsvLoanImportParser {
             "status"
     );
 
-    public List<LoanImportCsvRow> parse(MultipartFile file) {
+    public List<ParsedRow> parse(MultipartFile file) {
         validateFile(file);
-        List<LoanImportCsvRow> rows = new ArrayList<>();
+        List<ParsedRow> rows = new ArrayList<>();
         try (CSVReaderHeaderAware reader = new CSVReaderHeaderAware(new InputStreamReader(file.getInputStream()))) {
             Map<String, String> line;
             int rowNumber = 1;
@@ -45,17 +45,28 @@ public class CsvLoanImportParser {
                     continue;
                 }
                 validateHeaders(normalized);
-                rows.add(new LoanImportCsvRow(
-                        rowNumber,
-                        required(normalized, "sourcesystem").trim(),
-                        required(normalized, "externalloanid").trim(),
-                        required(normalized, "borrowername").trim(),
-                        parsePositiveDecimal(required(normalized, "principalamount"), "principalAmount"),
-                        parseDate(required(normalized, "startdate"), "startDate"),
-                        parseStatus(required(normalized, "status")),
-                        parseOffsetDateTime(normalized.get("sourceupdatedat"))
-                ));
+
+                String sourceSystem = trimmed(normalized.get("sourcesystem"));
+                String externalLoanId = trimmed(normalized.get("externalloanid"));
+                String borrowerName = trimmed(normalized.get("borrowername"));
+                try {
+                    LoanImportCsvRow payload = new LoanImportCsvRow(
+                            rowNumber,
+                            required(normalized, "sourcesystem").trim(),
+                            required(normalized, "externalloanid").trim(),
+                            required(normalized, "borrowername").trim(),
+                            parsePositiveDecimal(required(normalized, "principalamount"), "principalAmount"),
+                            parseDate(required(normalized, "startdate"), "startDate"),
+                            parseStatus(required(normalized, "status")),
+                            parseOffsetDateTime(normalized.get("sourceupdatedat"))
+                    );
+                    rows.add(new ParsedRow(rowNumber, sourceSystem, externalLoanId, borrowerName, payload, null));
+                } catch (IllegalArgumentException ex) {
+                    rows.add(new ParsedRow(rowNumber, sourceSystem, externalLoanId, borrowerName, null, ex.getMessage()));
+                }
             }
+        } catch (UnsupportedFileTypeException ex) {
+            throw ex;
         } catch (Exception ex) {
             throw new UnsupportedFileTypeException("Unable to read import CSV");
         }
@@ -99,6 +110,10 @@ public class CsvLoanImportParser {
         return value;
     }
 
+    private String trimmed(String value) {
+        return value == null ? null : value.trim();
+    }
+
     private BigDecimal parsePositiveDecimal(String value, String field) {
         try {
             BigDecimal parsed = new BigDecimal(value.trim());
@@ -136,5 +151,15 @@ public class CsvLoanImportParser {
         } catch (IllegalArgumentException ex) {
             throw new IllegalArgumentException("Invalid status; supported values are ACTIVE and CLOSED");
         }
+    }
+
+    public record ParsedRow(
+            int rowNumber,
+            String sourceSystem,
+            String externalLoanId,
+            String borrowerName,
+            LoanImportCsvRow payload,
+            String validationMessage
+    ) {
     }
 }

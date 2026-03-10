@@ -24,9 +24,11 @@ import org.springframework.web.multipart.MultipartFile;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 @Service
@@ -60,7 +62,7 @@ public class LoanImportService {
 
     @Transactional
     public LoanImportPreviewResponse preview(MultipartFile file) {
-        List<LoanImportCsvRow> rows = csvLoanImportParser.parse(file);
+        List<CsvLoanImportParser.ParsedRow> rows = csvLoanImportParser.parse(file);
         LoanImportBatch batch = new LoanImportBatch();
         batch.setFileName(file.getOriginalFilename() == null ? "loan-import.csv" : file.getOriginalFilename());
         batch.setUploadedBy(currentUserService.usernameOrSystem());
@@ -77,7 +79,7 @@ public class LoanImportService {
         int updateCount = 0;
         int unchangedCount = 0;
 
-        for (LoanImportCsvRow row : rows) {
+        for (CsvLoanImportParser.ParsedRow row : rows) {
             LoanImportRow importRow = new LoanImportRow();
             importRow.setBatchId(savedBatch.getId());
             importRow.setRowNumber(row.rowNumber());
@@ -86,14 +88,23 @@ public class LoanImportService {
             importRow.setBorrowerName(row.borrowerName());
             importRow.setRawPayloadJson(toJson(row));
 
-            String dedupeKey = row.sourceSystem().toUpperCase(Locale.ROOT) + "::" + row.externalLoanId().toUpperCase(Locale.ROOT);
+            if (row.validationMessage() != null) {
+                importRow.setAction(LoanImportRowAction.ERROR);
+                importRow.setValidationMessage(row.validationMessage());
+                invalidRows++;
+                persistedRows.add(importRow);
+                continue;
+            }
+
+            LoanImportCsvRow payload = row.payload();
+            String dedupeKey = payload.sourceSystem().toUpperCase(Locale.ROOT) + "::" + payload.externalLoanId().toUpperCase(Locale.ROOT);
             if (!seenKeys.add(dedupeKey)) {
                 importRow.setAction(LoanImportRowAction.ERROR);
                 importRow.setValidationMessage("Duplicate sourceSystem + externalLoanId in file");
                 invalidRows++;
             } else {
                 try {
-                    PreviewOutcome outcome = inferAction(row);
+                    PreviewOutcome outcome = inferAction(payload);
                     importRow.setAction(outcome.action());
                     importRow.setValidationMessage(outcome.message());
                     importRow.setLoanId(outcome.loanId());
@@ -137,7 +148,6 @@ public class LoanImportService {
 
         for (LoanImportRow row : rows) {
             if (row.getAction() == LoanImportRowAction.ERROR) {
-                failedCount++;
                 continue;
             }
             try {
@@ -216,18 +226,36 @@ public class LoanImportService {
         return left == null ? right == null : left.equals(right);
     }
 
-    private String detectSourceSystem(List<LoanImportCsvRow> rows) {
-        if (rows.isEmpty()) {
+    private String detectSourceSystem(List<CsvLoanImportParser.ParsedRow> rows) {
+        String first = null;
+        for (CsvLoanImportParser.ParsedRow row : rows) {
+            if (row.sourceSystem() != null && !row.sourceSystem().isBlank()) {
+                first = row.sourceSystem();
+                break;
+            }
+        }
+        if (first == null) {
             return null;
         }
-        String first = rows.get(0).sourceSystem();
-        boolean same = rows.stream().allMatch(row -> first.equals(row.sourceSystem()));
+        boolean same = rows.stream()
+                .map(CsvLoanImportParser.ParsedRow::sourceSystem)
+                .filter(value -> value != null && !value.isBlank())
+                .allMatch(first::equals);
         return same ? first : "MIXED";
     }
 
-    private String toJson(LoanImportCsvRow row) {
+    private String toJson(CsvLoanImportParser.ParsedRow row) {
         try {
-            return objectMapper.writeValueAsString(row);
+            if (row.payload() != null) {
+                return objectMapper.writeValueAsString(row.payload());
+            }
+            Map<String, Object> raw = new HashMap<>();
+            raw.put("rowNumber", row.rowNumber());
+            raw.put("sourceSystem", row.sourceSystem());
+            raw.put("externalLoanId", row.externalLoanId());
+            raw.put("borrowerName", row.borrowerName());
+            raw.put("validationMessage", row.validationMessage());
+            return objectMapper.writeValueAsString(raw);
         } catch (JsonProcessingException ex) {
             throw new IllegalStateException("Unable to serialize import row payload");
         }
@@ -268,4 +296,3 @@ public class LoanImportService {
     private record PreviewOutcome(LoanImportRowAction action, Long loanId, String message) {
     }
 }
-
