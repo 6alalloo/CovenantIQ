@@ -2,5 +2,7 @@ services:
   covenantiq:
     build: .
     container_name: covenantiq
+    environment:
+      SPRING_PROFILES_ACTIVE: demo
     ports:
       - "8080:8080"

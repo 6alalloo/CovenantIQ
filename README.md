@@ -12,8 +12,11 @@ Commercial Loan Risk Surveillance Platform.
 ### Backend
 ```bash
 mvn clean package
+$env:SPRING_PROFILES_ACTIVE='demo'
 mvn spring-boot:run
 ```
+
+The backend requires a sample-content profile for local startup unless you provide non-placeholder runtime secrets. Use `demo` for seeded data or `test` for test-mode startup.
 
 ### Frontend
 ```bash
@@ -27,3 +30,14 @@ npm run dev
 docker compose build
 docker compose up
 ```
+
+The container runtime defaults to the `demo` Spring profile so it can start cleanly in Docker and Dockploy without production secrets. Override `SPRING_PROFILES_ACTIVE` if you want `test` instead.
+
+### Dokploy
+Create an `Application` in Dokploy and deploy this repo as a Dockerfile-based app with:
+- Build Type: `Dockerfile`
+- Dockerfile Path: `Dockerfile`
+- Docker Context Path: `.`
+- Container Port: `8080`
+
+The image already defaults to the `demo` Spring profile, so no extra environment variables are required for demo deployments. If you want test mode instead, set `SPRING_PROFILES_ACTIVE=test` in Dokploy.
