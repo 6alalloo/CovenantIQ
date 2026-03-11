@@ -436,5 +436,5 @@ If that still does not help, ask the demo owner:
 
 ## Related Docs
 
-For run/setup details, see `docs/RUNBOOK.md`.
-For business/domain intent, see `docs/BRD.md`.
+For run/setup details, see `RUNBOOK.md`.
+For business/domain intent, see `../specs/BRD_CURRENT_STATE_2026-03-10.md`.

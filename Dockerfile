@@ -16,5 +16,5 @@ FROM eclipse-temurin:21-jre
 WORKDIR /app
 ENV SPRING_PROFILES_ACTIVE=demo
 COPY --from=backend-build /app/target/covenantiq-0.0.1-SNAPSHOT.jar app.jar
-EXPOSE 8080
+EXPOSE 38080
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]

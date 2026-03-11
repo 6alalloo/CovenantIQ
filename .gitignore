@@ -3,9 +3,16 @@ target/
 .vscode/
 *.iml
 *.log
+*.err.log
+*.out.log
+*.tsbuildinfo
 .DS_Store
 node_modules/
 frontend/node_modules/
 frontend/dist/
 frontend/playwright-report/
 frontend/test-results/
+frontend/vite.config.js
+frontend/vite.config.d.ts
+output/
+tmp/

@@ -5,7 +5,7 @@ Commercial Loan Risk Surveillance Platform.
 ## Stack
 - Backend: Java 21, Spring Boot, Spring Web, Spring Data JPA, H2
 - Frontend: React, TypeScript, Vite, Tailwind CSS, Recharts
-- Docs: `docs/BRD.md`, `docs/TDD.md`, `docs/IMPLEMENTATION_PLAN.md`, `docs/RUNBOOK.md`
+- Docs: `docs/specs/BRD_CURRENT_STATE_2026-03-10.md`, `docs/specs/TDD_CURRENT_STATE_2026-03-10.md`, `docs/plans/backend_completion_plan.md`, `docs/guides/RUNBOOK.md`
 
 ## Quick Start
 
@@ -38,6 +38,6 @@ Create an `Application` in Dokploy and deploy this repo as a Dockerfile-based ap
 - Build Type: `Dockerfile`
 - Dockerfile Path: `Dockerfile`
 - Docker Context Path: `.`
-- Container Port: `8080`
+- Container Port: `38080`
 
 The image already defaults to the `demo` Spring profile, so no extra environment variables are required for demo deployments. If you want test mode instead, set `SPRING_PROFILES_ACTIVE=test` in Dokploy.

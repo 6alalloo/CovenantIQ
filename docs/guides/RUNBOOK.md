@@ -14,10 +14,10 @@
    - Optional test mode: ``$env:SPRING_PROFILES_ACTIVE='test'``
 3. `mvn spring-boot:run`
 4. Open:
-   - App: `http://localhost:8080`
-   - API: `http://localhost:8080/api/v1/loans`
-   - Swagger: `http://localhost:8080/swagger-ui.html`
-   - H2: `http://localhost:8080/h2-console`
+   - App: `http://localhost:38080`
+   - API: `http://localhost:38080/api/v1/loans`
+   - Swagger: `http://localhost:38080/swagger-ui.html`
+   - H2: `http://localhost:38080/h2-console`
 5. Demo users seeded in `demo` and `test` modes include:
    - Analyst: `analyst@demo.com` / `Demo123!`
    - Risk lead: `risklead@demo.com` / `Demo123!`
@@ -43,12 +43,12 @@
 
 Notes:
 - E2E config starts backend (`mvn spring-boot:run`) and frontend (`npm run dev`) automatically.
-- Existing running servers on ports `8080` and `5173` are reused.
+- Existing running servers on ports `38080` and `5173` are reused.
 
 ## Single-Container Docker Run
 1. `docker compose build`
 2. `docker compose up`
-3. Open `http://localhost:8080`
+3. Open `http://localhost:38080`
 
 Notes:
 - The container defaults to the `demo` Spring profile.
@@ -61,8 +61,8 @@ Notes:
    - Build Type: `Dockerfile`
    - Dockerfile Path: `Dockerfile`
    - Docker Context Path: `.`
-   - Container Port: `8080`
-4. Add a domain and point it to container port `8080`.
+   - Container Port: `38080`
+4. Add a domain and point it to container port `38080`.
 5. Deploy.
 
 Notes:
@@ -73,7 +73,7 @@ Notes:
 ## Smoke Test API Flow
 1. Log in and capture a bearer token:
 ```bash
-curl -X POST http://localhost:8080/api/v1/auth/login \
+curl -X POST http://localhost:38080/api/v1/auth/login \
   -H "Content-Type: application/json" \
   -d "{\"username\":\"analyst@demo.com\",\"password\":\"Demo123!\"}"
 ```
@@ -83,27 +83,27 @@ $env:TOKEN="paste-access-token-here"
 ```
 3. Create loan:
 ```bash
-curl -X POST http://localhost:8080/api/v1/loans \
+curl -X POST http://localhost:38080/api/v1/loans \
   -H "Authorization: Bearer $env:TOKEN" \
   -H "Content-Type: application/json" \
   -d "{\"borrowerName\":\"Demo Corp\",\"principalAmount\":1000000,\"startDate\":\"2025-01-01\"}"
 ```
 4. Add covenant:
 ```bash
-curl -X POST http://localhost:8080/api/v1/loans/1/covenants \
+curl -X POST http://localhost:38080/api/v1/loans/1/covenants \
   -H "Authorization: Bearer $env:TOKEN" \
   -H "Content-Type: application/json" \
   -d "{\"type\":\"CURRENT_RATIO\",\"thresholdValue\":1.2,\"comparisonType\":\"GREATER_THAN_EQUAL\",\"severityLevel\":\"HIGH\"}"
 ```
 5. Submit statement:
 ```bash
-curl -X POST http://localhost:8080/api/v1/loans/1/financial-statements \
+curl -X POST http://localhost:38080/api/v1/loans/1/financial-statements \
   -H "Authorization: Bearer $env:TOKEN" \
   -H "Content-Type: application/json" \
   -d "{\"periodType\":\"QUARTERLY\",\"fiscalYear\":2025,\"fiscalQuarter\":1,\"currentAssets\":120,\"currentLiabilities\":100,\"totalDebt\":200,\"totalEquity\":100,\"ebit\":50,\"interestExpense\":10}"
 ```
 6. Fetch risk summary:
 ```bash
-curl http://localhost:8080/api/v1/loans/1/risk-summary \
+curl http://localhost:38080/api/v1/loans/1/risk-summary \
   -H "Authorization: Bearer $env:TOKEN"
 ```

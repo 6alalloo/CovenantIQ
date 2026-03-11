@@ -1,5 +1,6 @@
-package com.covenantiq.config;
+package com.covenantiq.bootstrap.seed;
 
+import com.covenantiq.config.AppModeProperties;
 import com.covenantiq.domain.Alert;
 import com.covenantiq.domain.Comment;
 import com.covenantiq.domain.CovenantResult;
