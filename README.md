@@ -41,3 +41,5 @@ Create an `Application` in Dokploy and deploy this repo as a Dockerfile-based ap
 - Container Port: `38080`
 
 The image already defaults to the `demo` Spring profile, so no extra environment variables are required for demo deployments. If you want test mode instead, set `SPRING_PROFILES_ACTIVE=test` in Dokploy.
+
+If Dokploy serves the frontend from a different origin than local development, set `APP_CORS_ALLOWED_ORIGIN_PATTERNS` to that domain, for example `https://your-app.example.com`.

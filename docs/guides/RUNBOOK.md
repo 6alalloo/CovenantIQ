@@ -68,6 +68,7 @@ Notes:
 Notes:
 - No extra environment variables are required for demo-mode Dokploy deployment.
 - To run in test mode instead, set `SPRING_PROFILES_ACTIVE=test` in Dokploy.
+- If the frontend is served from a different origin in Dokploy, set `APP_CORS_ALLOWED_ORIGIN_PATTERNS=https://your-domain.example` for the deployed domain.
 - This deployment uses in-memory H2, so data resets on restart.
 
 ## Smoke Test API Flow

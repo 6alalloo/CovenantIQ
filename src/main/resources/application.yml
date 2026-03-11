@@ -51,6 +51,8 @@ app:
     refresh-token-days: 7
   workflow:
     bootstrap-default-alert-workflow-enabled: true
+  cors:
+    allowed-origin-patterns: ${APP_CORS_ALLOWED_ORIGIN_PATTERNS:http://localhost:5173,http://127.0.0.1:5173}
   webhook:
     encryption-key-base64: ${APP_WEBHOOK_ENCRYPTION_KEY_BASE64:MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=}
 
