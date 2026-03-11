@@ -52,6 +52,7 @@ app:
   workflow:
     bootstrap-default-alert-workflow-enabled: true
   cors:
+    allow-all-origins: ${APP_CORS_ALLOW_ALL_ORIGINS:false}
     allowed-origin-patterns: ${APP_CORS_ALLOWED_ORIGIN_PATTERNS:http://localhost:5173,http://127.0.0.1:5173}
   webhook:
     encryption-key-base64: ${APP_WEBHOOK_ENCRYPTION_KEY_BASE64:MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=}
