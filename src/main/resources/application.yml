@@ -10,7 +10,7 @@ spring:
     hibernate:
       ddl-auto: update
     open-in-view: false
-    show-sql: true
+    show-sql: ${APP_JPA_SHOW_SQL:false}
     properties:
       hibernate:
         format_sql: true
@@ -23,6 +23,7 @@ spring:
 
 server:
   port: 38080
+  forward-headers-strategy: framework
 
 springdoc:
   swagger-ui:
@@ -52,8 +53,10 @@ app:
   workflow:
     bootstrap-default-alert-workflow-enabled: true
   cors:
-    allow-all-origins: ${APP_CORS_ALLOW_ALL_ORIGINS:false}
-    allowed-origin-patterns: ${APP_CORS_ALLOWED_ORIGIN_PATTERNS:http://localhost:5173,http://127.0.0.1:5173}
+    allow-all-origins: ${APP_CORS_ALLOW_ALL_ORIGINS:true}
+    allowed-origin-patterns: ${APP_CORS_ALLOWED_ORIGIN_PATTERNS:http://localhost:5173,http://127.0.0.1:5173,https://covenant-iq.sandbox.array.world}
   webhook:
     encryption-key-base64: ${APP_WEBHOOK_ENCRYPTION_KEY_BASE64:MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=}
-
+  events:
+    dispatch:
+      log-errors: ${APP_EVENTS_DISPATCH_LOG_ERRORS:false}

@@ -48,6 +48,7 @@ public class OutboxDispatcherService {
     private final HttpClient httpClient;
     private final int batchSize;
     private final int maxAttempts;
+    private final boolean logDispatchErrors;
 
     public OutboxDispatcherService(
             EventOutboxRepository eventOutboxRepository,
@@ -55,7 +56,8 @@ public class OutboxDispatcherService {
             WebhookDeliveryRepository webhookDeliveryRepository,
             ObjectMapper objectMapper,
             @Value("${app.events.dispatch.batch-size:25}") int batchSize,
-            @Value("${app.events.dispatch.max-attempts:6}") int maxAttempts
+            @Value("${app.events.dispatch.max-attempts:6}") int maxAttempts,
+            @Value("${app.events.dispatch.log-errors:false}") boolean logDispatchErrors
     ) {
         this.eventOutboxRepository = eventOutboxRepository;
         this.webhookIntegrationService = webhookIntegrationService;
@@ -63,6 +65,7 @@ public class OutboxDispatcherService {
         this.objectMapper = objectMapper;
         this.batchSize = batchSize;
         this.maxAttempts = maxAttempts;
+        this.logDispatchErrors = logDispatchErrors;
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(3))
                 .build();
@@ -107,7 +110,9 @@ public class OutboxDispatcherService {
                 eventOutboxRepository.save(event);
             }
         } catch (Exception ex) {
-            log.error("Outbox dispatch failed: eventOutboxId={}, eventId={}", event.getId(), event.getEventId(), ex);
+            if (logDispatchErrors) {
+                log.error("Outbox dispatch failed: eventOutboxId={}, eventId={}", event.getId(), event.getEventId(), ex);
+            }
             markForRetry(event);
         }
     }
