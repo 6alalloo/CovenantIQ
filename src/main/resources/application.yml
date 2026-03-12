@@ -60,3 +60,5 @@ app:
   events:
     dispatch:
       log-errors: ${APP_EVENTS_DISPATCH_LOG_ERRORS:false}
+  request-debug:
+    enabled: ${APP_REQUEST_DEBUG_ENABLED:false}

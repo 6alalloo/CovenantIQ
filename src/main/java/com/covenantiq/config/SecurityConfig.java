@@ -1,6 +1,7 @@
 package com.covenantiq.config;
 
 import com.covenantiq.security.CorrelationIdFilter;
+import com.covenantiq.security.CorsDebugFilter;
 import com.covenantiq.security.JwtAuthenticationFilter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.context.annotation.Bean;
@@ -33,6 +34,7 @@ public class SecurityConfig {
             HttpSecurity http,
             JwtAuthenticationFilter jwtAuthenticationFilter,
             CorrelationIdFilter correlationIdFilter,
+            CorsDebugFilter corsDebugFilter,
             ObjectMapper objectMapper,
             CorsConfigurationSource corsConfigurationSource,
             @Value("${app.security.enabled:true}") boolean securityEnabled
@@ -94,6 +96,7 @@ public class SecurityConfig {
                         })
                 )
                 .addFilterBefore(correlationIdFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(corsDebugFilter, CorrelationIdFilter.class)
                 .addFilterAfter(jwtAuthenticationFilter, CorrelationIdFilter.class);
 
         return http.build();

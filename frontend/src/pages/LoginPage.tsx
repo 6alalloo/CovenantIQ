@@ -6,7 +6,7 @@ import { BrandLogo } from "../components/BrandLogo";
 import { useRuntimeConfig } from "../runtime/RuntimeConfigContext";
 
 export function LoginPage() {
-  const { sampleUxEnabled } = useRuntimeConfig();
+  const { runtimeConfig, sampleUxEnabled } = useRuntimeConfig();
   const defaultCredentials = useMemo(
     () => ({
       username: sampleUxEnabled ? "analyst@demo.com" : "",
@@ -60,7 +60,6 @@ export function LoginPage() {
             Sign in with an explicitly provisioned account.
           </p>
         )}
-
         <label className="mt-5 block text-xs uppercase tracking-[0.08em] text-[var(--text-secondary)]">Username</label>
         <input
           className="input mt-2"
@@ -87,6 +86,14 @@ export function LoginPage() {
         <button type="submit" className="btn-primary mt-5 w-full" disabled={isLoading} data-testid="login-submit">
           {isLoading ? "Signing in..." : "Sign In"}
         </button>
+        {runtimeConfig.demoMode ? (
+          <section className="mt-4 text-sm text-[var(--text-secondary)]">
+            <p className="text-xs uppercase tracking-[0.12em] text-[var(--text-secondary)]">Seeded Credentials</p>
+            <p className="mt-2">Admin: <code className="text-[var(--text-primary)]">admin@demo.com / Demo123!</code></p>
+            <p>Risk Lead: <code className="text-[var(--text-primary)]">risklead@demo.com / Demo123!</code></p>
+            <p>Analyst: <code className="text-[var(--text-primary)]">analyst@demo.com / Demo123!</code></p>
+          </section>
+        ) : null}
       </form>
     </div>
   );
