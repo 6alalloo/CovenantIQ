@@ -43,3 +43,15 @@ Create an `Application` in Dokploy and deploy this repo as a Dockerfile-based ap
 The image already defaults to the `demo` Spring profile, so no extra environment variables are required for demo deployments. If you want test mode instead, set `SPRING_PROFILES_ACTIVE=test` in Dokploy.
 
 If Dokploy serves the frontend from a different origin than local development, set `APP_CORS_ALLOWED_ORIGIN_PATTERNS` to that domain, for example `https://your-app.example.com`.
+
+### Local Reverse Proxy Harness
+To simulate a Dokploy-style reverse proxy locally:
+
+1. Add this line to your hosts file:
+   `127.0.0.1 covenantiq.local`
+2. Start the proxy harness:
+   `docker compose -f docker-compose.proxy.yml up --build`
+3. Open:
+   `http://covenantiq.local:8081`
+
+This runs Nginx in front of the Spring container and forwards `Host`, `Forwarded`, and `X-Forwarded-*` headers so you can inspect proxy-sensitive behavior like CORS and origin handling.

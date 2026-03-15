@@ -8,7 +8,9 @@ import com.covenantiq.exception.ConflictException;
 import com.covenantiq.exception.ResourceNotFoundException;
 import com.covenantiq.repository.LoanRepository;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -54,7 +56,11 @@ public class LoanService {
 
     @Transactional(readOnly = true)
     public Page<Loan> getLoans(Pageable pageable) {
-        return loanRepository.findAll(pageable);
+        Pageable effectivePageable = pageable;
+        if (pageable.getSort().isUnsorted()) {
+            effectivePageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(Sort.Direction.DESC, "id"));
+        }
+        return loanRepository.findAll(effectivePageable);
     }
 
     @Transactional(readOnly = true)

@@ -19,5 +19,7 @@ public interface FinancialStatementRepository extends JpaRepository<FinancialSta
             Long loanId, PeriodType periodType
     );
 
+    List<FinancialStatement> findByLoanIdInAndSupersededFalseOrderBySubmissionTimestampUtcAscIdAsc(List<Long> loanIds);
+
     Optional<FinancialStatement> findTopByLoanIdAndSupersededFalseOrderBySubmissionTimestampUtcDescIdDesc(Long loanId);
 }

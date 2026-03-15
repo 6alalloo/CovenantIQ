@@ -8,6 +8,7 @@ import com.covenantiq.enums.AlertStatus;
 import com.covenantiq.enums.AlertType;
 import com.covenantiq.enums.SeverityLevel;
 import com.covenantiq.exception.ConflictException;
+import com.covenantiq.exception.ForbiddenOperationException;
 import com.covenantiq.exception.ResourceNotFoundException;
 import com.covenantiq.exception.UnprocessableEntityException;
 import com.covenantiq.repository.AlertRepository;
@@ -29,20 +30,17 @@ public class AlertService {
     private final CurrentUserService currentUserService;
     private final ActivityLogService activityLogService;
     private final OutboxEventPublisher outboxEventPublisher;
-    private final WorkflowService workflowService;
 
     public AlertService(
             AlertRepository alertRepository,
             CurrentUserService currentUserService,
             ActivityLogService activityLogService,
-            OutboxEventPublisher outboxEventPublisher,
-            WorkflowService workflowService
+            OutboxEventPublisher outboxEventPublisher
     ) {
         this.alertRepository = alertRepository;
         this.currentUserService = currentUserService;
         this.activityLogService = activityLogService;
         this.outboxEventPublisher = outboxEventPublisher;
-        this.workflowService = workflowService;
     }
 
     @Transactional
@@ -63,7 +61,6 @@ public class AlertService {
         alert.setAlertRuleCode(alertRuleCode);
         alert.setTriggeredTimestampUtc(OffsetDateTime.now(ZoneOffset.UTC));
         Alert saved = alertRepository.save(alert);
-        workflowService.ensureInstanceForAlert(saved);
         outboxEventPublisher.publish("Alert", saved.getId(), "AlertCreated", java.util.Map.of(
                 "alertId", saved.getId(),
                 "loanId", loan.getId(),
@@ -91,14 +88,8 @@ public class AlertService {
             throw new UnprocessableEntityException("resolutionNotes is required when resolving an alert");
         }
 
-        workflowService.transition(
-                workflowService.ensureInstanceForAlert(alert),
-                targetStatus.name(),
-                "Alert status transition",
-                java.util.Map.of("resolutionNotes", resolutionNotes == null ? "" : resolutionNotes),
-                java.util.Map.of("resolutionNotes", resolutionNotes == null ? "" : resolutionNotes)
-        );
-
+        validateTransition(alert.getStatus(), targetStatus);
+        validateRole(alert.getStatus(), targetStatus);
         OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
         String username = currentUserService.usernameOrSystem();
         switch (targetStatus) {
@@ -147,4 +138,31 @@ public class AlertService {
         return saved;
     }
 
+    private void validateTransition(AlertStatus currentStatus, AlertStatus targetStatus) {
+        boolean allowed = switch (currentStatus) {
+            case OPEN -> targetStatus == AlertStatus.ACKNOWLEDGED;
+            case ACKNOWLEDGED -> targetStatus == AlertStatus.UNDER_REVIEW || targetStatus == AlertStatus.RESOLVED;
+            case UNDER_REVIEW -> targetStatus == AlertStatus.RESOLVED || targetStatus == AlertStatus.OPEN;
+            case RESOLVED -> false;
+        };
+        if (!allowed) {
+            throw new ConflictException("Transition is not allowed");
+        }
+    }
+
+    private void validateRole(AlertStatus currentStatus, AlertStatus targetStatus) {
+        if (targetStatus == AlertStatus.ACKNOWLEDGED) {
+            if (!(currentUserService.hasRole("ANALYST") || currentUserService.hasRole("ADMIN"))) {
+                throw new ForbiddenOperationException("You do not have permission to perform this action");
+            }
+            return;
+        }
+        if (targetStatus == AlertStatus.UNDER_REVIEW
+                || targetStatus == AlertStatus.RESOLVED
+                || (currentStatus == AlertStatus.UNDER_REVIEW && targetStatus == AlertStatus.OPEN)) {
+            if (!(currentUserService.hasRole("RISK_LEAD") || currentUserService.hasRole("ADMIN"))) {
+                throw new ForbiddenOperationException("You do not have permission to perform this action");
+            }
+        }
+    }
 }

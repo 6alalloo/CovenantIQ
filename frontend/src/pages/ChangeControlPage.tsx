@@ -11,7 +11,7 @@ import { PageSection } from "../components/layout";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "../components/ui/tabs";
-import { formatDateTime, formatEnumLabel } from "../lib/format";
+import { formatDateTime, formatEnumLabel, formatNumber } from "../lib/format";
 import type { ChangeRequest, ReleaseBatch } from "../types/api";
 import { useRuntimeConfig } from "../runtime/RuntimeConfigContext";
 
@@ -32,6 +32,71 @@ function statusBadge(request: ChangeRequest) {
   if (request.status === "RELEASED") return "Pass";
   if (request.status === "SUBMITTED") return "Open";
   return request.status;
+}
+
+type ParsedDiff = {
+  loanId?: number;
+  covenantType?: string;
+  from?: {
+    thresholdValue?: string | number;
+    comparisonType?: string;
+    severityLevel?: string;
+  };
+  to?: {
+    thresholdValue?: string | number;
+    comparisonType?: string;
+    severityLevel?: string;
+  };
+};
+
+function parseDiffJson(diffJson: string): ParsedDiff | null {
+  try {
+    return JSON.parse(diffJson) as ParsedDiff;
+  } catch {
+    return null;
+  }
+}
+
+function renderCovenantChange(diff: ParsedDiff) {
+  if (!diff.from || !diff.to) return null;
+  return (
+    <div className="mt-3 grid gap-3 md:grid-cols-2">
+      <div className="governance-diff-card">
+        <span className="governance-diff-card__label">Previous</span>
+        <div className="mt-2 space-y-2 text-sm">
+          <div className="flex items-center justify-between">
+            <span className="text-[var(--text-secondary)]">Threshold</span>
+            <span className="font-numeric">{formatNumber(diff.from.thresholdValue)}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-[var(--text-secondary)]">Comparison</span>
+            <span>{formatEnumLabel(diff.from.comparisonType ?? "-")}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-[var(--text-secondary)]">Severity</span>
+            <span>{formatEnumLabel(diff.from.severityLevel ?? "-")}</span>
+          </div>
+        </div>
+      </div>
+      <div className="governance-diff-card">
+        <span className="governance-diff-card__label">Proposed</span>
+        <div className="mt-2 space-y-2 text-sm">
+          <div className="flex items-center justify-between">
+            <span className="text-[var(--text-secondary)]">Threshold</span>
+            <span className="font-numeric">{formatNumber(diff.to.thresholdValue)}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-[var(--text-secondary)]">Comparison</span>
+            <span>{formatEnumLabel(diff.to.comparisonType ?? "-")}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-[var(--text-secondary)]">Severity</span>
+            <span>{formatEnumLabel(diff.to.severityLevel ?? "-")}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export function ChangeControlPage() {
@@ -287,6 +352,24 @@ export function ChangeControlPage() {
                           <div className="mt-4 space-y-3">
                             {selectedRequest.items.map((item) => (
                               <div key={item.id} className="governance-timeline-item">
+                                {(() => {
+                                  const parsed = parseDiffJson(item.diffJson);
+                                  const isCovenant =
+                                    item.artifactType === "COVENANT_RULE" ||
+                                    (!!parsed?.covenantType && (parsed?.from || parsed?.to));
+                                  if (!parsed || !isCovenant) return null;
+                                  return (
+                                    <div className="mb-3">
+                                      <p className="text-sm font-semibold text-[var(--text-primary)]">
+                                        {formatEnumLabel(parsed.covenantType ?? "Covenant Rule")}
+                                      </p>
+                                      {parsed.loanId ? (
+                                        <p className="text-xs text-[var(--text-secondary)]">Loan #{parsed.loanId}</p>
+                                      ) : null}
+                                      {renderCovenantChange(parsed)}
+                                    </div>
+                                  );
+                                })()}
                                 <div className="flex flex-wrap items-center justify-between gap-3">
                                   <div>
                                     <p className="text-sm font-semibold text-[var(--text-primary)]">{formatEnumLabel(item.artifactType)}</p>
@@ -294,23 +377,11 @@ export function ChangeControlPage() {
                                   </div>
                                   <Badge>{`${item.fromVersion ?? "-"} -> ${item.toVersion ?? "-"}`}</Badge>
                                 </div>
-                                <pre className="governance-code-block mt-3">{item.diffJson}</pre>
+                                {parseDiffJson(item.diffJson) ? null : (
+                                  <pre className="governance-code-block mt-3">{item.diffJson}</pre>
+                                )}
                               </div>
                             ))}
-                          </div>
-                        </article>
-
-                        <article className="governance-subpanel">
-                          <p className="governance-eyebrow">Validation Evidence</p>
-                          <div className="mt-4 grid gap-3 md:grid-cols-2">
-                            <div className="governance-diff-card">
-                              <span className="governance-diff-card__label">Evidence packet</span>
-                              <strong>Attached in change payload</strong>
-                            </div>
-                            <div className="governance-diff-card">
-                              <span className="governance-diff-card__label">Promotion readiness</span>
-                              <strong>{selectedRequest.status === "APPROVED" ? "Approved for release" : "Awaiting maker-checker decision"}</strong>
-                            </div>
                           </div>
                         </article>
 

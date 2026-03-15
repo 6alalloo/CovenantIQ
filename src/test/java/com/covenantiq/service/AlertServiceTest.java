@@ -2,12 +2,11 @@ package com.covenantiq.service;
 
 import com.covenantiq.domain.Alert;
 import com.covenantiq.domain.Loan;
-import com.covenantiq.domain.WorkflowInstance;
 import com.covenantiq.enums.AlertStatus;
 import com.covenantiq.exception.ConflictException;
+import com.covenantiq.exception.ForbiddenOperationException;
 import com.covenantiq.exception.ResourceNotFoundException;
 import com.covenantiq.exception.UnprocessableEntityException;
-import com.covenantiq.exception.WorkflowTransitionConflictException;
 import com.covenantiq.repository.AlertRepository;
 import com.covenantiq.security.CurrentUserService;
 import org.junit.jupiter.api.Test;
@@ -41,9 +40,6 @@ class AlertServiceTest {
     @Mock
     private OutboxEventPublisher outboxEventPublisher;
 
-    @Mock
-    private WorkflowService workflowService;
-
     @InjectMocks
     private AlertService alertService;
 
@@ -68,8 +64,8 @@ class AlertServiceTest {
         Alert alert = alert(AlertStatus.OPEN);
         when(alertRepository.findById(1L)).thenReturn(Optional.of(alert));
         when(currentUserService.usernameOrSystem()).thenReturn("analyst@demo.com");
+        when(currentUserService.hasRole("ANALYST")).thenReturn(true);
         when(alertRepository.save(any(Alert.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        when(workflowService.ensureInstanceForAlert(any(Alert.class))).thenReturn(new WorkflowInstance());
 
         Alert saved = alertService.updateStatus(1L, AlertStatus.ACKNOWLEDGED, null);
 
@@ -83,10 +79,6 @@ class AlertServiceTest {
     void cannotTransitionOpenDirectlyToUnderReview() {
         Alert alert = alert(AlertStatus.OPEN);
         when(alertRepository.findById(1L)).thenReturn(Optional.of(alert));
-        when(workflowService.ensureInstanceForAlert(any(Alert.class))).thenReturn(new WorkflowInstance());
-        when(workflowService.transition(any(), any(), any(), any(), any())).thenThrow(
-                new WorkflowTransitionConflictException("Transition is not allowed", java.util.Map.of())
-        );
 
         assertThrows(ConflictException.class, () -> alertService.updateStatus(1L, AlertStatus.UNDER_REVIEW, null));
         verify(currentUserService, never()).usernameOrSystem();
@@ -105,12 +97,10 @@ class AlertServiceTest {
     void resolveForbiddenForUnauthorizedRole() {
         Alert alert = alert(AlertStatus.ACKNOWLEDGED);
         when(alertRepository.findById(1L)).thenReturn(Optional.of(alert));
-        when(workflowService.ensureInstanceForAlert(any(Alert.class))).thenReturn(new WorkflowInstance());
-        when(workflowService.transition(any(), any(), any(), any(), any())).thenThrow(
-                new WorkflowTransitionConflictException("Actor role is not allowed for this transition", java.util.Map.of())
-        );
+        when(currentUserService.hasRole("RISK_LEAD")).thenReturn(false);
+        when(currentUserService.hasRole("ADMIN")).thenReturn(false);
 
-        assertThrows(ConflictException.class, () -> alertService.updateStatus(1L, AlertStatus.RESOLVED, "resolved"));
+        assertThrows(ForbiddenOperationException.class, () -> alertService.updateStatus(1L, AlertStatus.RESOLVED, "resolved"));
         verify(alertRepository, never()).save(any(Alert.class));
     }
 
@@ -119,8 +109,8 @@ class AlertServiceTest {
         Alert alert = alert(AlertStatus.ACKNOWLEDGED);
         when(alertRepository.findById(1L)).thenReturn(Optional.of(alert));
         when(currentUserService.usernameOrSystem()).thenReturn("risklead@demo.com");
+        when(currentUserService.hasRole("RISK_LEAD")).thenReturn(true);
         when(alertRepository.save(any(Alert.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        when(workflowService.ensureInstanceForAlert(any(Alert.class))).thenReturn(new WorkflowInstance());
 
         Alert saved = alertService.updateStatus(1L, AlertStatus.RESOLVED, " done ");
 
@@ -134,10 +124,6 @@ class AlertServiceTest {
     void cannotTransitionFromResolvedToOpen() {
         Alert alert = alert(AlertStatus.RESOLVED);
         when(alertRepository.findById(1L)).thenReturn(Optional.of(alert));
-        when(workflowService.ensureInstanceForAlert(any(Alert.class))).thenReturn(new WorkflowInstance());
-        when(workflowService.transition(any(), any(), any(), any(), any())).thenThrow(
-                new WorkflowTransitionConflictException("Transition is not allowed", java.util.Map.of())
-        );
 
         assertThrows(ConflictException.class, () -> alertService.updateStatus(1L, AlertStatus.OPEN, null));
         verify(alertRepository, never()).save(any(Alert.class));

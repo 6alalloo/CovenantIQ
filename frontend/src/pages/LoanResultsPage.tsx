@@ -5,7 +5,7 @@ import type { CovenantResult, CovenantResultStatus } from "../types/api";
 import { Surface } from "../components/layout";
 import { Badge } from "../components/ui/badge";
 import { Select } from "../components/ui/select";
-import { formatDateTime, formatEnumLabel } from "../lib/format";
+import { formatDateTime, formatEnumLabel, formatNumber } from "../lib/format";
 
 export function LoanResultsPage() {
   const { loanId } = useParams();
@@ -55,7 +55,7 @@ export function LoanResultsPage() {
             <tr key={row.id}>
               <td className="font-numeric">{row.id}</td>
               <td>{formatEnumLabel(row.covenantType)}</td>
-              <td className="font-numeric">{row.actualValue}</td>
+              <td className="font-numeric">{formatNumber(row.actualValue)}</td>
               <td><Badge>{formatEnumLabel(row.status)}</Badge></td>
               <td>{formatDateTime(row.evaluationTimestampUtc)}</td>
             </tr>

@@ -53,7 +53,22 @@ export function formatAlertMessage(message: string) {
   const base = message.replace(/_/g, " ").replace(/\s+/g, " ").trim();
   if (!base) return "Alert requires attention.";
   const lowered = base.toLowerCase();
-  return `${lowered[0].toUpperCase()}${lowered.slice(1)}`;
+  const normalized = `${lowered[0].toUpperCase()}${lowered.slice(1)}`;
+
+  const actualMatch = normalized.match(/actual=([+-]?\d+(?:\.\d+)?)/i);
+  const thresholdMatch = normalized.match(/threshold=([+-]?\d+(?:\.\d+)?)/i);
+  if (!actualMatch && !thresholdMatch) return normalized;
+
+  const actualText = actualMatch ? formatNumber(actualMatch[1]) : null;
+  const thresholdText = thresholdMatch ? formatNumber(thresholdMatch[1]) : null;
+  const withoutValues = normalized.replace(/\s*actual=[+-]?\d+(?:\.\d+)?\s*,?/i, "").replace(/\s*threshold=[+-]?\d+(?:\.\d+)?/i, "").trim();
+
+  const suffixParts = [];
+  if (actualText) suffixParts.push(`Actual ${actualText}`);
+  if (thresholdText) suffixParts.push(`Threshold ${thresholdText}`);
+  const suffix = suffixParts.length ? ` (${suffixParts.join(" · ")})` : "";
+
+  return `${withoutValues}${suffix}`.trim();
 }
 
 export function formatDateTime(value: string | null | undefined) {
@@ -67,4 +82,14 @@ export function formatDateTime(value: string | null | undefined) {
     hour: "2-digit",
     minute: "2-digit",
   }).format(date);
+}
+
+export function formatNumber(value: string | number | null | undefined, decimals = 3) {
+  if (value === null || value === undefined || value === "") return "-";
+  const numeric = typeof value === "number" ? value : Number(value);
+  if (Number.isNaN(numeric)) return String(value);
+  return new Intl.NumberFormat(undefined, {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  }).format(numeric);
 }

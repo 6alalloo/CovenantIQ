@@ -11,6 +11,8 @@ import java.util.List;
 public interface CovenantResultRepository extends JpaRepository<CovenantResult, Long> {
     List<CovenantResult> findByFinancialStatementIdAndSupersededFalse(Long financialStatementId);
 
+    List<CovenantResult> findByFinancialStatementIdInAndSupersededFalse(List<Long> financialStatementIds);
+
     Page<CovenantResult> findByFinancialStatementLoanIdAndSupersededFalse(Long loanId, Pageable pageable);
 
     long countByFinancialStatementIdAndStatusAndSupersededFalse(Long financialStatementId, CovenantResultStatus status);

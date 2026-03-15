@@ -26,7 +26,6 @@ public class CovenantEvaluationService {
     private final FinancialRatioService financialRatioService;
     private final AlertService alertService;
     private final OutboxEventPublisher outboxEventPublisher;
-    private final RulesetService rulesetService;
     private final CollateralExceptionService collateralExceptionService;
 
     public CovenantEvaluationService(
@@ -35,7 +34,6 @@ public class CovenantEvaluationService {
             FinancialRatioService financialRatioService,
             AlertService alertService,
             OutboxEventPublisher outboxEventPublisher,
-            RulesetService rulesetService,
             CollateralExceptionService collateralExceptionService
     ) {
         this.covenantRepository = covenantRepository;
@@ -43,7 +41,6 @@ public class CovenantEvaluationService {
         this.financialRatioService = financialRatioService;
         this.alertService = alertService;
         this.outboxEventPublisher = outboxEventPublisher;
-        this.rulesetService = rulesetService;
         this.collateralExceptionService = collateralExceptionService;
     }
 
@@ -79,38 +76,32 @@ public class CovenantEvaluationService {
                 boolean activeException = collateralExceptionService
                         .getActiveApprovedException(loan.getId(), result.getCovenant().getId())
                         .isPresent();
-                RulesetService.RuleDecision decision = rulesetService.evaluatePublished("COVENANT_EVAL_DEFAULT", java.util.Map.of(
-                        "comparisonPass", false,
-                        "activeException", activeException
-                ));
+                String reasonCode = activeException ? "EXCEPTION_DOWNGRADED" : "THRESHOLD_BREACH";
                 outboxEventPublisher.publish("CovenantResult", result.getId(), "CovenantBreachDetected", java.util.Map.of(
                         "loanId", loan.getId(),
                         "statementId", statement.getId(),
                         "covenantId", result.getCovenant().getId(),
                         "severity", result.getCovenant().getSeverityLevel().name(),
-                        "reasonCode", decision.reasonCode()
+                        "reasonCode", reasonCode
                 ));
-                if (!decision.breach() && activeException) {
+                if (activeException) {
                     alertService.createAlert(
                             loan,
                             statement,
                             AlertType.EARLY_WARNING,
                             "Covenant exception active: downgraded breach to warning for " + result.getCovenant().getType(),
                             result.getCovenant().getSeverityLevel(),
-                            decision.reasonCode()
+                            reasonCode
                     );
                 } else {
-                    AlertType alertType = "EARLY_WARNING".equalsIgnoreCase(decision.alertType())
-                            ? AlertType.EARLY_WARNING
-                            : AlertType.BREACH;
                     alertService.createAlert(
                             loan,
                             statement,
-                            alertType,
+                            AlertType.BREACH,
                             "Covenant breach for " + result.getCovenant().getType() + ". Actual=" + result.getActualValue()
                                     + ", Threshold=" + result.getCovenant().getThresholdValue(),
                             result.getCovenant().getSeverityLevel(),
-                            decision.reasonCode()
+                            reasonCode
                     );
                 }
             }

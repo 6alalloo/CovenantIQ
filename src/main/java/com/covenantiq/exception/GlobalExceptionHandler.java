@@ -124,18 +124,6 @@ public class GlobalExceptionHandler {
         return pd;
     }
 
-    @ExceptionHandler(WorkflowTransitionConflictException.class)
-    public ProblemDetail handleWorkflowTransitionConflict(WorkflowTransitionConflictException ex, HttpServletRequest request) {
-        boolean roleDenied = ex.getDiagnostics() != null && ex.getDiagnostics().containsKey("requiredRoles");
-        HttpStatus status = roleDenied ? HttpStatus.FORBIDDEN : HttpStatus.CONFLICT;
-        ProblemDetail pd = ProblemDetail.forStatusAndDetail(status, ex.getMessage());
-        pd.setTitle(roleDenied ? "Forbidden" : "Workflow Transition Conflict");
-        pd.setInstance(URI.create(request.getRequestURI()));
-        pd.setProperty("diagnostics", ex.getDiagnostics());
-        addMeta(pd, roleDenied ? "access_denied" : "workflow_transition_conflict");
-        return pd;
-    }
-
     private void addMeta(ProblemDetail problemDetail, String code) {
         problemDetail.setProperty("timestamp", java.time.OffsetDateTime.now().toString());
         problemDetail.setProperty("code", code);

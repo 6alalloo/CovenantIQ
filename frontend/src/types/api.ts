@@ -5,4 +5,3 @@ export * from "./governance";
 export * from "./imports";
 export * from "./integrations";
 export * from "./loans";
-export * from "./workflows";

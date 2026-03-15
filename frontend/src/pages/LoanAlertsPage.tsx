@@ -7,6 +7,33 @@ import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { formatAlertMessage, formatEnumLabel } from "../lib/format";
 
+const SEVERITY_COLORS: Record<Alert["severityLevel"], string> = {
+  LOW: "#38BDF8",
+  MEDIUM: "#F59E0B",
+  HIGH: "#EF4444",
+};
+
+function severityBadgeClass(severityLevel: Alert["severityLevel"]) {
+  return severityLevel === "HIGH"
+    ? "border-[color:rgb(239_68_68_/_0.28)] bg-[rgb(239_68_68_/_0.15)] text-[#EF4444]"
+    : severityLevel === "MEDIUM"
+      ? "border-[color:rgb(245_158_11_/_0.28)] bg-[rgb(245_158_11_/_0.15)] text-[#F59E0B]"
+      : "border-[color:rgb(56_189_248_/_0.28)] bg-[rgb(56_189_248_/_0.15)] text-[#38BDF8]";
+}
+
+function SeverityBadge({ severityLevel }: { severityLevel: Alert["severityLevel"] }) {
+  const color = SEVERITY_COLORS[severityLevel];
+  return (
+    <span
+      className={`chip gap-1.5 px-2.5 py-1 ${severityBadgeClass(severityLevel)}`}
+      style={{ borderColor: `${color}47`, backgroundColor: `${color}26`, color }}
+    >
+      <span className="inline-block h-1.5 w-1.5 rounded-full" style={{ backgroundColor: color }} />
+      {formatEnumLabel(severityLevel)}
+    </span>
+  );
+}
+
 export function LoanAlertsPage() {
   const { loanId } = useParams();
   const [searchParams] = useSearchParams();
@@ -60,7 +87,7 @@ export function LoanAlertsPage() {
             >
               <td className="font-numeric">{alert.id}</td>
               <td>{formatEnumLabel(alert.alertType)}</td>
-              <td><Badge>{formatEnumLabel(alert.severityLevel)}</Badge></td>
+              <td><SeverityBadge severityLevel={alert.severityLevel} /></td>
               <td data-testid={`alert-status-${alert.id}`}><Badge>{formatEnumLabel(alert.status)}</Badge></td>
               <td>{formatAlertMessage(alert.message)}</td>
               <td>

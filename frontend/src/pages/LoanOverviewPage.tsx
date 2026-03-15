@@ -1,13 +1,14 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
-import { addCovenant, getCovenants, getLoan, getRiskDetails, updateCovenant } from "../api/client";
+import { useNavigate, useParams } from "react-router-dom";
+import { addCovenant, createChangeRequest, getCovenants, getLoan, getRiskDetails, updateCovenant } from "../api/client";
 import type { ComparisonType, Covenant, CovenantType, Loan, RiskDetails, SeverityLevel } from "../types/api";
 import { Surface } from "../components/layout";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
+import { ConfirmDialog } from "../components/ui/confirm-dialog";
 import { Input } from "../components/ui/input";
 import { Select } from "../components/ui/select";
-import { formatEnumLabel } from "../lib/format";
+import { formatEnumLabel, formatNumber } from "../lib/format";
 
 type CovenantTemplate = {
   type: CovenantType;
@@ -113,6 +114,10 @@ export function LoanOverviewPage() {
   const [riskDetails, setRiskDetails] = useState<RiskDetails | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [editingCovenantId, setEditingCovenantId] = useState<number | null>(null);
+  const [changeNotice, setChangeNotice] = useState<{ open: boolean; requestId: number | null }>({
+    open: false,
+    requestId: null,
+  });
   const [form, setForm] = useState<{
     type: CovenantType;
     thresholdValue: string;
@@ -191,11 +196,45 @@ export function LoanOverviewPage() {
     try {
       setError(null);
       if (isEditing && editingCovenantId) {
+        const prior = selectedCovenant;
         await updateCovenant(numericLoanId, editingCovenantId, {
           thresholdValue: Number(form.thresholdValue),
           comparisonType: form.comparisonType,
           severityLevel: form.severityLevel,
         });
+        if (prior) {
+          const request = await createChangeRequest({
+            type: "RULESET",
+            justification: `Covenant rule updated for ${loan?.borrowerName ?? `Loan #${numericLoanId}`}.`,
+            items: [
+              {
+                artifactType: "COVENANT_RULE",
+                artifactId: prior.id,
+                fromVersion: "current",
+                toVersion: "pending",
+                diffJson: JSON.stringify(
+                  {
+                    loanId: numericLoanId,
+                    covenantType: form.type,
+                    from: {
+                      thresholdValue: prior.thresholdValue,
+                      comparisonType: prior.comparisonType,
+                      severityLevel: prior.severityLevel,
+                    },
+                    to: {
+                      thresholdValue: form.thresholdValue,
+                      comparisonType: form.comparisonType,
+                      severityLevel: form.severityLevel,
+                    },
+                  },
+                  null,
+                  2
+                ),
+              },
+            ],
+          });
+          setChangeNotice({ open: true, requestId: request.id });
+        }
       } else {
         await addCovenant(numericLoanId, {
           type: form.type,
@@ -257,6 +296,8 @@ export function LoanOverviewPage() {
     return passing ? "PASS" : "BREACH";
   }, [form.comparisonType, form.thresholdValue, selectedDetail]);
 
+  const navigate = useNavigate();
+
   return (
     <div className="grid gap-3 xl:grid-cols-[1.5fr_1fr]">
       <Surface className="p-5">
@@ -290,8 +331,8 @@ export function LoanOverviewPage() {
               return (
               <tr key={covenant.id}>
                 <td>{formatEnumLabel(covenant.type)}</td>
-                <td className="font-numeric">{detail?.actualValue ?? "-"}</td>
-                <td className="font-numeric">{covenant.thresholdValue}</td>
+                <td className="font-numeric">{formatNumber(detail?.actualValue)}</td>
+                <td className="font-numeric">{formatNumber(covenant.thresholdValue)}</td>
                 <td>{covenant.comparisonType === "GREATER_THAN_EQUAL" ? "Must stay above" : "Must stay below"}</td>
                 <td><Badge>{detail ? formatEnumLabel(detail.resultStatus) : "No Evaluation"}</Badge></td>
                 <td className="text-right">
@@ -334,7 +375,9 @@ export function LoanOverviewPage() {
                         } hover:border-[var(--border-strong)]`}
                       >
                         <p className="text-xs font-semibold">{formatEnumLabel(template.type)}</p>
-                        <p className="mt-1 text-[11px] text-[var(--text-secondary)]">{template.defaultThreshold}</p>
+                        <p className="mt-1 text-[11px] text-[var(--text-secondary)]">
+                          {formatNumber(template.defaultThreshold)}
+                        </p>
                         {exists ? (
                           <p className="mt-1 text-[10px] uppercase tracking-[0.08em] text-[var(--risk-medium)]">Existing Rule</p>
                         ) : null}
@@ -398,7 +441,7 @@ export function LoanOverviewPage() {
           {selectedDetail ? (
             <div className="rounded-md border border-[var(--border-default)] bg-[var(--bg-surface-1)] p-2 text-xs">
               <p>
-                Latest actual: <span className="font-numeric">{selectedDetail.actualValue}</span>
+                Latest actual: <span className="font-numeric">{formatNumber(selectedDetail.actualValue)}</span>
               </p>
               {previewStatus ? (
                 <p className="mt-1">
@@ -418,6 +461,18 @@ export function LoanOverviewPage() {
       </Surface>
 
       {error ? <p className="text-sm text-[var(--risk-high)]">{error}</p> : null}
+      <ConfirmDialog
+        open={changeNotice.open}
+        title="Change Request Submitted"
+        description={`Change request${changeNotice.requestId ? ` #${changeNotice.requestId}` : ""} is now in Change Control.`}
+        confirmLabel="Open Change Control"
+        cancelLabel="Close"
+        onConfirm={() => {
+          setChangeNotice({ open: false, requestId: null });
+          navigate("/app/change-control");
+        }}
+        onCancel={() => setChangeNotice({ open: false, requestId: null })}
+      />
     </div>
   );
 }

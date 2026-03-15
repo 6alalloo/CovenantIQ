@@ -20,11 +20,9 @@ import { LoanStatementsPage } from "./pages/LoanStatementsPage";
 import { LoansPage } from "./pages/LoansPage";
 import { LoginPage } from "./pages/LoginPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
-import { PolicyStudioPage } from "./pages/PolicyStudioPage";
 import { PortfolioPage } from "./pages/PortfolioPage";
 import { ReportsPage } from "./pages/ReportsPage";
 import { SettingsPage } from "./pages/SettingsPage";
-import { WorkflowDesignerPage } from "./pages/WorkflowDesignerPage";
 
 export default function App() {
   return (
@@ -70,9 +68,14 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-        <Route path="workflows" element={<WorkflowDesignerPage />} />
-        <Route path="policies" element={<PolicyStudioPage />} />
-        <Route path="change-control" element={<ChangeControlPage />} />
+        <Route
+          path="change-control"
+          element={
+            <ProtectedRoute allowRoles={["RISK_LEAD", "ADMIN"]}>
+              <ChangeControlPage />
+            </ProtectedRoute>
+          }
+        />
         <Route path="reports" element={<ReportsPage />} />
         <Route
           path="admin/users"

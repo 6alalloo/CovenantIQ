@@ -118,6 +118,13 @@ export type PortfolioSummary = {
   totalUnderReviewAlerts: number;
 };
 
+export type PortfolioTrendPoint = {
+  periodLabel: string;
+  highRiskLoanCount: number;
+  mediumRiskLoanCount: number;
+  lowRiskLoanCount: number;
+};
+
 export type ActivityLog = {
   id: number;
   eventType: ActivityEventType;

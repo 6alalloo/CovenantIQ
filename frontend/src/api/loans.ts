@@ -9,6 +9,7 @@ import type {
   Loan,
   PageResponse,
   PortfolioSummary,
+  PortfolioTrendPoint,
   RiskDetails,
   RiskSummary,
 } from "../types/api";
@@ -65,6 +66,17 @@ export function getCovenantResults(loanId: number, page = 0, size = 20) {
   return request<PageResponse<CovenantResult>>(
     `/loans/${loanId}/covenant-results${makeQuery({ page, size, sort: "id,desc" })}`
   );
+}
+
+export async function getCovenantResultsGlobal() {
+  const loans = await getLoans(0, 100);
+  const pages = await Promise.all(
+    loans.content.map(async (loan) => {
+      const page = await getCovenantResults(loan.id, 0, 50);
+      return page.content.map((item) => ({ ...item, loanId: loan.id }));
+    })
+  );
+  return pages.flat();
 }
 
 export function getRiskSummary(loanId: number) {
@@ -138,6 +150,10 @@ export function getLoanActivity(loanId: number, page = 0, size = 25) {
 
 export function getPortfolioSummary() {
   return request<PortfolioSummary>("/portfolio/summary");
+}
+
+export function getPortfolioTrend() {
+  return request<PortfolioTrendPoint[]>("/portfolio/trend");
 }
 
 export function getAttachmentList(statementId: number) {

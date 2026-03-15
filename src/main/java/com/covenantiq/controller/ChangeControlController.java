@@ -41,7 +41,7 @@ public class ChangeControlController {
     }
 
     @GetMapping("/change-requests")
-    @PreAuthorize("hasAnyRole('ANALYST','RISK_LEAD','ADMIN')")
+    @PreAuthorize("hasAnyRole('RISK_LEAD','ADMIN')")
     public List<ChangeRequestResponse> listChangeRequests() {
         return changeControlService.listChangeRequests();
     }
@@ -59,7 +59,7 @@ public class ChangeControlController {
     }
 
     @GetMapping("/releases")
-    @PreAuthorize("hasAnyRole('ANALYST','RISK_LEAD','ADMIN')")
+    @PreAuthorize("hasAnyRole('RISK_LEAD','ADMIN')")
     public List<ReleaseBatchResponse> listReleases() {
         return changeControlService.listReleases();
     }

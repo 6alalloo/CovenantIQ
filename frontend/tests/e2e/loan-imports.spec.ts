@@ -14,6 +14,7 @@ test("E2E-090 admin can preview and execute a loan import", async ({ page }) => 
   await page.getByTestId("nav-loan-imports").click();
   await expect(page).toHaveURL(/\/app\/admin\/loan-imports$/);
   await expect(page.getByRole("heading", { name: "Loan Imports" })).toBeVisible();
+  const importHistory = page.locator("div").filter({ has: page.getByRole("heading", { name: "Import History" }) });
 
   const fileInput = page.locator('input[type="file"]').first();
   await fileInput.setInputFiles("tests/fixtures/loan-import-valid.csv");
@@ -29,7 +30,7 @@ test("E2E-090 admin can preview and execute a loan import", async ({ page }) => 
   await expect((await executeResponse).ok()).toBeTruthy();
 
   await expect(page.getByText("COMPLETED", { exact: true }).first()).toBeVisible();
-  await expect(page.getByText(/Batch #/)).toBeVisible();
+  await expect(importHistory.getByRole("button", { name: /Batch #/ }).first()).toBeVisible();
 });
 
 test("E2E-091 analyst cannot access loan imports route", async ({ page }) => {
@@ -57,6 +58,7 @@ test("E2E-092 invalid loan import file shows validation errors", async ({ page }
 test("E2E-093 admin can review prior loan import history", async ({ page }) => {
   await loginAs(page, "ADMIN");
   await page.goto("/app/admin/loan-imports");
+  const importHistory = page.locator("div").filter({ has: page.getByRole("heading", { name: "Import History" }) });
 
   const fileInput = page.locator('input[type="file"]').first();
   const borrower = `History Borrower ${Date.now()}`;
@@ -70,9 +72,9 @@ test("E2E-093 admin can review prior loan import history", async ({ page }) => {
     )
   );
 
-  await expect(page.getByText("loan-import-history.csv")).toBeVisible();
+  await expect(page.getByText("Latest file: loan-import-history.csv")).toBeVisible();
   await expect(page.getByText("PREVIEW_READY", { exact: true }).first()).toBeVisible();
-  await expect(page.getByText(new RegExp(`${borrower}`))).toBeVisible();
+  await expect(page.getByRole("cell", { name: borrower, exact: true })).toBeVisible();
 });
 
 test("E2E-094 unchanged loan import row is shown as UNCHANGED", async ({ page }) => {

@@ -1,34 +1,5 @@
-export type Ruleset = {
-  id: number;
-  key: string;
-  name: string;
-  domain: "COVENANT_EVAL";
-  ownerRole: string;
-  createdBy: string;
-  createdAt: string;
-};
-
-export type RulesetVersion = {
-  id: number;
-  rulesetId: number;
-  version: number;
-  status: "DRAFT" | "VALIDATED" | "PUBLISHED" | "ARCHIVED";
-  definitionJson: string;
-  schemaVersion: number;
-  changeSummary: string | null;
-  createdBy: string;
-  approvedBy: string | null;
-  publishedAt: string | null;
-  createdAt: string;
-};
-
-export type RulesetValidationResult = {
-  rulesetVersionId: number;
-  valid: boolean;
-  pass: boolean;
-  actualOutput: Record<string, unknown>;
-  message: string;
-};
+export type CovenantExceptionType = "WAIVER" | "OVERRIDE";
+export type CovenantExceptionStatus = "REQUESTED" | "APPROVED" | "REJECTED" | "EXPIRED";
 
 export type CollateralAsset = {
   id: number;
@@ -48,11 +19,11 @@ export type CovenantException = {
   id: number;
   loanId: number;
   covenantId: number;
-  exceptionType: "WAIVER" | "OVERRIDE";
+  exceptionType: CovenantExceptionType;
   reason: string;
   effectiveFrom: string;
   effectiveTo: string;
-  status: "REQUESTED" | "APPROVED" | "EXPIRED" | "REJECTED";
+  status: CovenantExceptionStatus;
   requestedBy: string;
   approvedBy: string | null;
   approvedAt: string | null;
@@ -60,23 +31,36 @@ export type CovenantException = {
   createdAt: string;
 };
 
+export type ChangeRequestType = "RULESET" | "WORKFLOW" | "INTEGRATION_CONFIG";
+export type ChangeRequestStatus = "DRAFT" | "SUBMITTED" | "APPROVED" | "REJECTED" | "RELEASED" | "ROLLED_BACK";
+
+export type ChangeRequestItem = {
+  id: number;
+  artifactType: string;
+  artifactId: number;
+  fromVersion: string | null;
+  toVersion: string | null;
+  diffJson: string;
+};
+
 export type ChangeRequest = {
   id: number;
-  type: "RULESET" | "WORKFLOW" | "INTEGRATION_CONFIG";
-  status: "DRAFT" | "SUBMITTED" | "APPROVED" | "REJECTED" | "RELEASED" | "ROLLED_BACK";
+  type: ChangeRequestType;
+  status: ChangeRequestStatus;
   requestedBy: string;
   requestedAt: string;
   approvedBy: string | null;
   approvedAt: string | null;
   justification: string;
-  items: Array<{
-    id: number;
-    artifactType: string;
-    artifactId: number;
-    fromVersion: string | null;
-    toVersion: string | null;
-    diffJson: string;
-  }>;
+  items: ChangeRequestItem[];
+};
+
+export type ReleaseAudit = {
+  id: number;
+  action: string;
+  actor: string;
+  detailsJson: string;
+  timestampUtc: string;
 };
 
 export type ReleaseBatch = {
@@ -86,11 +70,5 @@ export type ReleaseBatch = {
   releasedBy: string;
   releasedAt: string;
   rollbackOfReleaseId: number | null;
-  audits: Array<{
-    id: number;
-    action: string;
-    actor: string;
-    detailsJson: string;
-    timestampUtc: string;
-  }>;
+  audits: ReleaseAudit[];
 };
