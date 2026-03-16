@@ -92,6 +92,91 @@ export function DashboardPage() {
     [loans]
   );
 
+  const derivedPortfolioSummary = useMemo(() => {
+    if (selectedLoanId || (!loans.length && !results.length && !alerts.length)) {
+      return null;
+    }
+
+    const useFiltered = range !== "all";
+    const resultSource = useFiltered ? filteredResults : results;
+    const alertSource = useFiltered ? filteredAlerts : alerts;
+    const activeLoans = loans.filter((loan) => loan.status === "ACTIVE");
+    const activeLoanIds = new Set(activeLoans.map((loan) => loan.id));
+    const statementStats = new Map<string, { loanId: number; statementId: number; ts: number; breachCount: number }>();
+    const latestByLoan = new Map<number, { ts: number; breachCount: number }>();
+
+    resultSource.forEach((result) => {
+      if (!activeLoanIds.has(result.loanId)) {
+        return;
+      }
+      const ts = new Date(result.evaluationTimestampUtc).getTime();
+      if (Number.isNaN(ts)) {
+        return;
+      }
+      const key = `${result.loanId}:${result.financialStatementId}`;
+      const existing = statementStats.get(key);
+      const breachCount = existing?.breachCount ?? 0;
+      statementStats.set(key, {
+        loanId: result.loanId,
+        statementId: result.financialStatementId,
+        ts: existing ? Math.max(existing.ts, ts) : ts,
+        breachCount: breachCount + (result.status === "BREACH" ? 1 : 0),
+      });
+    });
+
+    statementStats.forEach((stat) => {
+      const current = latestByLoan.get(stat.loanId);
+      if (!current || stat.ts > current.ts) {
+        latestByLoan.set(stat.loanId, { ts: stat.ts, breachCount: stat.breachCount });
+      }
+    });
+
+    const loansInScope = useFiltered ? activeLoans.filter((loan) => latestByLoan.has(loan.id)) : activeLoans;
+    let totalBreaches = 0;
+    let highRiskLoanCount = 0;
+    let mediumRiskLoanCount = 0;
+    let lowRiskLoanCount = 0;
+    let totalOpenAlerts = 0;
+    let totalUnderReviewAlerts = 0;
+
+    loansInScope.forEach((loan) => {
+      const breachCount = latestByLoan.get(loan.id)?.breachCount ?? 0;
+      totalBreaches += breachCount;
+      if (breachCount >= 2) {
+        highRiskLoanCount += 1;
+      } else if (breachCount === 1) {
+        mediumRiskLoanCount += 1;
+      } else {
+        lowRiskLoanCount += 1;
+      }
+    });
+
+    alertSource.forEach((alert) => {
+      if (!activeLoanIds.has(alert.loanId)) {
+        return;
+      }
+      if (alert.status === "OPEN") {
+        totalOpenAlerts += 1;
+      }
+      if (alert.status === "UNDER_REVIEW") {
+        totalUnderReviewAlerts += 1;
+      }
+    });
+
+    return {
+      totalActiveLoans: loansInScope.length,
+      highRiskLoanCount,
+      mediumRiskLoanCount,
+      lowRiskLoanCount,
+      totalBreaches,
+      totalOpenAlerts,
+      totalUnderReviewAlerts,
+    };
+  }, [alerts, filteredAlerts, filteredResults, loans, range, results, selectedLoanId]);
+
+  const effectivePortfolioSummary =
+    selectedLoanId || range !== "all" ? derivedPortfolioSummary : portfolioSummary ?? derivedPortfolioSummary;
+
   const riskMix = useMemo(() => {
     if (selectedLoanId) {
       return {
@@ -102,17 +187,17 @@ export function DashboardPage() {
         totalBreaches: breachedCount,
       };
     }
-    if (portfolioSummary) {
+    if (effectivePortfolioSummary) {
       return {
-        totalActiveLoans: portfolioSummary.totalActiveLoans,
-        highRiskLoanCount: portfolioSummary.highRiskLoanCount,
-        mediumRiskLoanCount: portfolioSummary.mediumRiskLoanCount,
-        lowRiskLoanCount: portfolioSummary.lowRiskLoanCount,
-        totalBreaches: portfolioSummary.totalBreaches,
+        totalActiveLoans: effectivePortfolioSummary.totalActiveLoans,
+        highRiskLoanCount: effectivePortfolioSummary.highRiskLoanCount,
+        mediumRiskLoanCount: effectivePortfolioSummary.mediumRiskLoanCount,
+        lowRiskLoanCount: effectivePortfolioSummary.lowRiskLoanCount,
+        totalBreaches: effectivePortfolioSummary.totalBreaches,
       };
     }
     return null;
-  }, [breachedCount, portfolioSummary, riskLevel, selectedLoanId]);
+  }, [breachedCount, effectivePortfolioSummary, riskLevel, selectedLoanId]);
 
   const alertPipeline = useMemo(() => {
     if (selectedLoanId) {
@@ -124,15 +209,17 @@ export function DashboardPage() {
         breaches: breachedCount,
       };
     }
-    if (portfolioSummary) {
+    if (effectivePortfolioSummary) {
       return {
-        open: portfolioSummary.totalOpenAlerts,
-        underReview: portfolioSummary.totalUnderReviewAlerts,
-        breaches: portfolioSummary.totalBreaches,
+        open: effectivePortfolioSummary.totalOpenAlerts,
+        underReview: effectivePortfolioSummary.totalUnderReviewAlerts,
+        breaches: effectivePortfolioSummary.totalBreaches,
       };
     }
     return null;
-  }, [breachedCount, filteredAlerts, portfolioSummary, selectedLoanId]);
+  }, [breachedCount, effectivePortfolioSummary, filteredAlerts, selectedLoanId]);
+
+  const riskMixLabel = selectedLoanId ? "active loan" : range === "all" ? "active loans" : "loans in range";
 
   return (
     <PageSection
@@ -266,7 +353,9 @@ export function DashboardPage() {
           <CardHeader className="border-b border-[var(--border-default)] pb-4">
             <div className="flex items-center justify-between">
               <CardTitle>Portfolio Risk Mix</CardTitle>
-              <Badge className="font-numeric">{riskMix?.totalActiveLoans ?? 0} active loans</Badge>
+              <Badge className="font-numeric">
+                {riskMix?.totalActiveLoans ?? 0} {riskMixLabel}
+              </Badge>
             </div>
           </CardHeader>
           <CardContent className="pt-4">

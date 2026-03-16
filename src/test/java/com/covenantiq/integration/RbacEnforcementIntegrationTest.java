@@ -70,13 +70,13 @@ class RbacEnforcementIntegrationTest {
     }
 
     @Test
-    void analystCannotAccessPortfolioSummary() throws Exception {
+    void analystCanAccessPortfolioSummary() throws Exception {
         String analystToken = accessTokenFor("analyst@demo.com", "Demo123!");
         String riskLeadToken = accessTokenFor("risklead@demo.com", "Demo123!");
 
         mockMvc.perform(get("/api/v1/portfolio/summary")
                         .header("Authorization", "Bearer " + analystToken))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isOk());
 
         mockMvc.perform(get("/api/v1/portfolio/summary")
                         .header("Authorization", "Bearer " + riskLeadToken))

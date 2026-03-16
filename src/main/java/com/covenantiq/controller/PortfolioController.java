@@ -21,13 +21,13 @@ public class PortfolioController {
     }
 
     @GetMapping("/summary")
-    @PreAuthorize("hasAnyRole('RISK_LEAD','ADMIN')")
+    @PreAuthorize("hasAnyRole('ANALYST','RISK_LEAD','ADMIN')")
     public PortfolioSummaryResponse getSummary() {
         return portfolioSummaryService.getSummary();
     }
 
     @GetMapping("/trend")
-    @PreAuthorize("hasAnyRole('RISK_LEAD','ADMIN')")
+    @PreAuthorize("hasAnyRole('ANALYST','RISK_LEAD','ADMIN')")
     public List<PortfolioTrendPointResponse> getTrend() {
         return portfolioSummaryService.getTrend();
     }
