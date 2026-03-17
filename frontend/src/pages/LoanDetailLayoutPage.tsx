@@ -1,6 +1,9 @@
+import { useEffect, useState } from "react";
 import { NavLink, Outlet, useParams } from "react-router-dom";
+import { getLoan } from "../api/client";
 import { PageSection } from "../components/layout";
 import { Tabs, TabsList, TabsTrigger } from "../components/ui/tabs";
+import type { Loan } from "../types/api";
 
 const TABS = [
   { key: "overview", label: "Overview", icon: "[]"},
@@ -16,9 +19,26 @@ const TABS = [
 export function LoanDetailLayoutPage() {
   const { loanId } = useParams();
   const pathKey = window.location.pathname.split("/").pop() ?? "overview";
+  const numericLoanId = Number(loanId);
+  const [loan, setLoan] = useState<Loan | null>(null);
+
+  useEffect(() => {
+    if (!Number.isFinite(numericLoanId)) return;
+    (async () => {
+      try {
+        const data = await getLoan(numericLoanId);
+        setLoan(data);
+      } catch {
+        setLoan(null);
+      }
+    })();
+  }, [numericLoanId]);
+
+  const loanTitle = loan?.borrowerName ? loan.borrowerName : `Loan #${loanId}`;
+
   return (
     <PageSection
-      title={`Loan #${loanId}`}
+      title={loanTitle}
       subtitle="Nested operations for covenant setup, statements, alerts, and collaboration."
     >
       <Tabs value={pathKey} onValueChange={() => {}}>

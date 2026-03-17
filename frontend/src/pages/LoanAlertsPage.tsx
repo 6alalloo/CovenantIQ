@@ -1,10 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { useSearchParams, useParams } from "react-router-dom";
 import { getAlertsForLoan, updateAlertStatus } from "../api/client";
 import type { Alert, AlertStatus } from "../types/api";
+import { useAuth } from "../auth/AuthContext";
 import { Surface } from "../components/layout";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
+import { ConfirmDialog } from "../components/ui/confirm-dialog";
 import { formatAlertMessage, formatEnumLabel } from "../lib/format";
 
 const SEVERITY_COLORS: Record<Alert["severityLevel"], string> = {
@@ -39,8 +42,19 @@ export function LoanAlertsPage() {
   const [searchParams] = useSearchParams();
   const focusAlert = searchParams.get("focusAlert");
   const numericLoanId = Number(loanId);
+  const { hasAnyRole } = useAuth();
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [resolutionModalOpen, setResolutionModalOpen] = useState(false);
+  const [forbiddenModalOpen, setForbiddenModalOpen] = useState(false);
+  const [forbiddenAction, setForbiddenAction] = useState<string | null>(null);
+  const [resolutionNotes, setResolutionNotes] = useState("");
+  const [resolutionError, setResolutionError] = useState<string | null>(null);
+  const [resolutionAlertId, setResolutionAlertId] = useState<number | null>(null);
+  const [isResolving, setIsResolving] = useState(false);
+
+  const canReviewResolve = useMemo(() => hasAnyRole(["RISK_LEAD", "ADMIN"]), [hasAnyRole]);
+  const modalHost = typeof document !== "undefined" ? document.body : null;
 
   const load = async () => {
     try {
@@ -62,6 +76,40 @@ export function LoanAlertsPage() {
     } catch (e) {
       setError((e as Error).message);
     }
+  };
+
+  const openResolutionModal = (alertId: number) => {
+    setResolutionAlertId(alertId);
+    setResolutionNotes("");
+    setResolutionError(null);
+    setResolutionModalOpen(true);
+  };
+
+  const handleResolveConfirm = async () => {
+    if (!resolutionAlertId) return;
+    const trimmed = resolutionNotes.trim();
+    if (!trimmed) {
+      setResolutionError("Resolution notes are required.");
+      return;
+    }
+    try {
+      setIsResolving(true);
+      await updateAlertStatus(resolutionAlertId, "RESOLVED", trimmed);
+      setResolutionModalOpen(false);
+      setResolutionAlertId(null);
+      setResolutionNotes("");
+      setResolutionError(null);
+      await load();
+    } catch (e) {
+      setResolutionError((e as Error).message);
+    } finally {
+      setIsResolving(false);
+    }
+  };
+
+  const showForbidden = (actionLabel: string) => {
+    setForbiddenAction(actionLabel);
+    setForbiddenModalOpen(true);
   };
 
   return (
@@ -105,7 +153,13 @@ export function LoanAlertsPage() {
                     <Button
                       variant="outline"
                       data-testid={`alert-review-${alert.id}`}
-                      onClick={() => void transition(alert.id, "UNDER_REVIEW")}
+                      onClick={() => {
+                        if (!canReviewResolve) {
+                          showForbidden("review");
+                          return;
+                        }
+                        void transition(alert.id, "UNDER_REVIEW");
+                      }}
                     >
                       Review
                     </Button>
@@ -114,7 +168,13 @@ export function LoanAlertsPage() {
                     <Button
                       variant="outline"
                       data-testid={`alert-resolve-${alert.id}`}
-                      onClick={() => void transition(alert.id, "RESOLVED")}
+                      onClick={() => {
+                        if (!canReviewResolve) {
+                          showForbidden("resolve");
+                          return;
+                        }
+                        openResolutionModal(alert.id);
+                      }}
                     >
                       Resolve
                     </Button>
@@ -126,6 +186,53 @@ export function LoanAlertsPage() {
         </tbody>
       </table>
       {error ? <p className="mt-3 text-sm text-[var(--risk-high)]">{error}</p> : null}
+
+      {modalHost
+        ? createPortal(
+          <ConfirmDialog
+            open={forbiddenModalOpen}
+            title="Action Restricted"
+            description={`You don't have permission to ${forbiddenAction ?? "perform this action"}. Please switch to a Risk Lead or Admin account.`}
+            confirmLabel="OK"
+            cancelLabel="Close"
+            onConfirm={() => setForbiddenModalOpen(false)}
+            onCancel={() => setForbiddenModalOpen(false)}
+          />,
+          modalHost
+        )
+        : null}
+
+      {modalHost && resolutionModalOpen
+        ? createPortal(
+          <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 px-4">
+            <div className="card w-full max-w-lg p-5">
+              <h2 className="panel-title">Resolution Notes Required</h2>
+              <p className="mt-2 text-sm text-[var(--text-secondary)]">
+                Add a brief note explaining why this alert is being resolved.
+              </p>
+              <label className="mt-4 block text-xs uppercase tracking-[0.08em] text-[var(--text-secondary)]">
+                Resolution Notes
+              </label>
+              <textarea
+                className="input mt-2 h-auto min-h-[120px] py-2"
+                placeholder="e.g., Recalculated DSCR after updated statement; breach cleared."
+                value={resolutionNotes}
+                onChange={(event) => setResolutionNotes(event.target.value)}
+              />
+              {resolutionError ? <p className="mt-2 text-sm text-[var(--risk-high)]">{resolutionError}</p> : null}
+              <div className="mt-5 flex justify-end gap-2">
+                <Button type="button" variant="outline" onClick={() => setResolutionModalOpen(false)} disabled={isResolving}>
+                  Cancel
+                </Button>
+                <Button type="button" onClick={() => void handleResolveConfirm()} disabled={isResolving}>
+                  {isResolving ? "Resolving..." : "Resolve Alert"}
+                </Button>
+              </div>
+            </div>
+          </div>,
+          modalHost
+        )
+        : null}
     </Surface>
   );
 }

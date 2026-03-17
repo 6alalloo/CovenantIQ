@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { closeLoan, createLoan, getLoans } from "../api/client";
 import type { Loan } from "../types/api";
@@ -16,34 +16,38 @@ export function LoansPage() {
   const [loans, setLoans] = useState<Loan[]>([]);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<"ALL" | "ACTIVE" | "CLOSED">("ALL");
+  const [page, setPage] = useState(0);
+  const [pageSize] = useState(20);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
   const [form, setForm] = useState({ borrowerName: "", principalAmount: "", startDate: "" });
   const [error, setError] = useState<string | null>(null);
   const [pendingClose, setPendingClose] = useState<Loan | null>(null);
   const [isClosing, setIsClosing] = useState(false);
+  const requestSeq = useRef(0);
 
   const loadLoans = async () => {
+    const seq = ++requestSeq.current;
     try {
-      const response = await getLoans();
+      const response = await getLoans(page, pageSize, search.trim());
+      if (seq !== requestSeq.current) return;
       setLoans(response.content);
+      setTotalPages(response.totalPages);
+      setTotalElements(response.totalElements);
+      setError(null);
     } catch (e) {
+      if (seq !== requestSeq.current) return;
       setError((e as Error).message);
     }
   };
 
   useEffect(() => {
     void loadLoans();
-  }, []);
+  }, [page, pageSize, search]);
 
   const filtered = useMemo(() => {
-    return loans.filter((loan) => {
-      const matchesSearch =
-        search.trim().length === 0 ||
-        loan.borrowerName.toLowerCase().includes(search.toLowerCase()) ||
-        String(loan.id).includes(search.trim());
-      const matchesStatus = status === "ALL" || loan.status === status;
-      return matchesSearch && matchesStatus;
-    });
-  }, [loans, search, status]);
+    return loans.filter((loan) => status === "ALL" || loan.status === status);
+  }, [loans, status]);
 
   const handleCreate = async (event: FormEvent) => {
     event.preventDefault();
@@ -83,9 +87,18 @@ export function LoansPage() {
               className="md:col-span-2"
               placeholder="Search borrower or loan id"
               value={search}
-              onChange={(event) => setSearch(event.target.value)}
+              onChange={(event) => {
+                setSearch(event.target.value);
+                setPage(0);
+              }}
             />
-            <Select value={status} onChange={(event) => setStatus(event.target.value as typeof status)}>
+            <Select
+              value={status}
+              onChange={(event) => {
+                setStatus(event.target.value as typeof status);
+                setPage(0);
+              }}
+            >
               <option value="ALL">All Statuses</option>
               <option value="ACTIVE">{formatEnumLabel("ACTIVE")}</option>
               <option value="CLOSED">{formatEnumLabel("CLOSED")}</option>
@@ -147,6 +160,29 @@ export function LoansPage() {
               ))}
             </TableBody>
           </Table>
+          <div className="mt-4 flex items-center justify-between text-sm">
+            <span className="text-[var(--text-secondary)]">
+              {totalElements === 0 ? "No loans found." : `Showing page ${page + 1} of ${Math.max(totalPages, 1)}.`}
+            </span>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                type="button"
+                onClick={() => setPage((prev) => Math.max(prev - 1, 0))}
+                disabled={page === 0}
+              >
+                Previous
+              </Button>
+              <Button
+                variant="outline"
+                type="button"
+                onClick={() => setPage((prev) => Math.min(prev + 1, Math.max(totalPages - 1, 0)))}
+                disabled={page >= totalPages - 1}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
         </Surface>
 
         <Surface className="p-5">

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { getLoanActivity } from "../api/client";
-import type { ActivityLog } from "../types/api";
+import { getLoan, getLoanActivity } from "../api/client";
+import type { ActivityLog, Loan } from "../types/api";
 import { Surface } from "../components/layout";
 import { Badge } from "../components/ui/badge";
 import { formatDateTime, formatEnumLabel } from "../lib/format";
@@ -10,6 +10,7 @@ export function LoanActivityPage() {
   const { loanId } = useParams();
   const numericLoanId = Number(loanId);
   const [rows, setRows] = useState<ActivityLog[]>([]);
+  const [loan, setLoan] = useState<Loan | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -22,6 +23,24 @@ export function LoanActivityPage() {
       }
     })();
   }, [numericLoanId]);
+
+  useEffect(() => {
+    if (!Number.isFinite(numericLoanId)) return;
+    (async () => {
+      try {
+        const data = await getLoan(numericLoanId);
+        setLoan(data);
+      } catch {
+        setLoan(null);
+      }
+    })();
+  }, [numericLoanId]);
+
+  const formatDescription = (description: string) => {
+    if (!loan?.borrowerName) return description;
+    const pattern = new RegExp(`loan\\s*#?\\s*${numericLoanId}\\b`, "gi");
+    return description.replace(pattern, loan.borrowerName);
+  };
 
   return (
     <Surface className="p-5">
@@ -41,7 +60,7 @@ export function LoanActivityPage() {
               <td>{formatDateTime(row.timestampUtc)}</td>
               <td><Badge>{formatEnumLabel(row.eventType)}</Badge></td>
               <td>{row.username}</td>
-              <td>{row.description}</td>
+              <td>{formatDescription(row.description)}</td>
             </tr>
           ))}
         </tbody>

@@ -55,12 +55,15 @@ public class LoanService {
     }
 
     @Transactional(readOnly = true)
-    public Page<Loan> getLoans(Pageable pageable) {
+    public Page<Loan> getLoans(Pageable pageable, String q) {
         Pageable effectivePageable = pageable;
         if (pageable.getSort().isUnsorted()) {
             effectivePageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(Sort.Direction.DESC, "id"));
         }
-        return loanRepository.findAll(effectivePageable);
+        if (q == null || q.isBlank()) {
+            return loanRepository.findAll(effectivePageable);
+        }
+        return loanRepository.searchLoans(q.trim(), effectivePageable);
     }
 
     @Transactional(readOnly = true)
